@@ -27,6 +27,18 @@ knitr::opts_chunk$set(
 htmltools::tagList(rmarkdown::html_dependency_font_awesome())
 
 library(dplyr)
+
+db = dplyr::src_sqlite("/data/nyc_parking/nyc_parking_2014_cleaned.sqlite")
+if (!"nyc" %in% ls())
+  nyc = readRDS("/data/nyc_parking/nyc_parking_2014_cleaned.rds")
+```
+
+```{r include = FALSE, error=TRUE}
+con = DBI::dbConnect(RSQLite::SQLite(), "/data/nyc_parking/nyc_parking_2014_cleaned.sqlite")
+if ("addresses" %in% DBI::dbListTables(con)) {
+  DBI::dbSendQuery(con, "DROP table addresses;")
+}
+DBI::dbDisconnect(con)
 ```
 
 ---
@@ -43,20 +55,27 @@ ls("package:dplyr") %>% purrr::keep(stringr::str_detect, "^src")
 
 ---
 
+## Wider Ecosystem
+
+```{r out.width="66%", echo=FALSE}
+knitr::include_graphics("imgs/implyr_logo.png")
+knitr::include_graphics("imgs/sparklyr_logo.png")
+```
+
+
+---
+
 ## Creating a database 
 
-.small[
 ```{r eval=FALSE}
 (db = dplyr::src_sqlite("/data/nyc_parking/nyc_parking_2014_cleaned.sqlite", create = TRUE))
 
 ##  src:  sqlite 3.22.0 [/data/nyc_parking/nyc_parking_2014_cleaned.sqlite]
 ##  tbls:
 ```
-]
 
 --
 
-.small[
 ```{r eval=FALSE}
 nyc_sql = dplyr::copy_to(db, nyc, temporary = FALSE)
 db
@@ -64,11 +83,9 @@ db
 ## src:  sqlite 3.22.0 [/data/nyc_parking/nyc_parking_2014_cleaned.sqlite]
 ## tbls: nyc, sqlite_stat1, sqlite_stat4
 ```
-]
 
 --
 
-.small[
 ```r
 pryr::object_size(db)
 ## 6.54 kB
@@ -82,66 +99,30 @@ pryr::object_size(nyc_sql)
 
 -rw-r--r-- 1 cr173 visitor 698M Nov  5 13:57 /data/nyc_parking/nyc_parking_2014_cleaned.sqlite
 ```
-]
 
 ---
 
 .small[
-```{r eval=FALSE}
-nyc_sql = dplyr::tbl(db,"nyc")
+```{r}
+nyc_sql = dplyr::tbl(db, "nyc")
 
 class(nyc_sql)
-## [1] "tbl_dbi"  "tbl_sql"  "tbl_lazy" "tbl" 
 ```
 ]
 
 --
 
 .small[
-```r
+```{r}
 nyc_sql
-## # Source:   table<nyc> [?? x 18]
-## # Database: sqlite 3.22.0 [/data/nyc_parking/nyc_parking_2014_cleaned.sqlite]
-##    registration_state Plate_Type issue_date Violation_Code Vehicle_Body_Type Vehicle_Make issuing_agency
-##                 <chr>      <chr>      <dbl>          <int>             <chr>        <chr>          <chr>
-##  1                 NJ        PAS      15706             20              SUBN        CHRYS              P
-##  2                 MI        PAS      15706             99               SDN        TOYOT              P
-##  3                 NY        PAS      15706             20              SUBN         FORD              P
-##  4                 NY        PAS      15706             20               SDN        INFIN              P
-##  5                 NY        SRF      15706             20               SDN        NISSA              P
-##  6                 NY        PAS      15706             46              SUBN        CHRYS              P
-##  7                 NY        PAS      15706             62               SDN        HYUND              P
-##  8                 NY        PAS      15706             98               SDN        TOYOT              P
-##  9                 NY        PAS      15706             71               SDN        TOYOT              P
-## 10                 NY        PAS      15706             71              SUBN         FORD              P
-## # ... with more rows, and 11 more variables: violation_location <chr>, violation_precinct <int>,
-## #   violation_time <chr>, house_number <chr>, street_name <chr>, intersecting_street <chr>,
-## #   vehicle_color <chr>, issue_day <int>, issue_month <dbl>, issue_year <dbl>, issue_wday <chr>
 ```
 ]
 
 --
 
 .small[
-```r
+```{r}
 str(nyc_sql)
-## List of 2
-##  $ src:List of 2
-##   ..$ con  :Formal class 'SQLiteConnection' [package "RSQLite"] with 7 slots
-##   .. .. ..@ ptr                :<externalptr> 
-##   .. .. ..@ dbname             : chr "/data/nyc_parking/nyc_parking_2014_cleaned.sqlite"
-##   .. .. ..@ loadable.extensions: logi TRUE
-##   .. .. ..@ flags              : int 70
-##   .. .. ..@ vfs                : chr ""
-##   .. .. ..@ ref                :<environment: 0x55788ecb6f38> 
-##   .. .. ..@ bigint             : chr "integer64"
-##   ..$ disco:<environment: 0x557888dd9840> 
-##   ..- attr(*, "class")= chr [1:3] "src_dbi" "src_sql" "src"
-##  $ ops:List of 2
-##   ..$ x   : 'ident' chr "nyc"
-##   ..$ vars: chr [1:18] "registration_state" "plate_type" "issue_date" "violation_code" ...
-##   ..- attr(*, "class")= chr [1:3] "op_base_remote" "op_base" "op"
-##  - attr(*, "class")= chr [1:4] "tbl_dbi" "tbl_sql" "tbl_lazy" "tbl"
 ```
 ]
 
@@ -149,111 +130,61 @@ str(nyc_sql)
 
 ## Using dplyr with sqlite 
 
-.small[
-```{r, eval=FALSE}
+```{r}
 (addr = nyc_sql %>%
-        select(issue_date, issuing_agency, violation_precinct, house_number, street_name) %>%
-        filter(violation_precinct >=1, violation_precinct <= 34)
+   select(issue_date, precinct = violation_precinct, house_number, street_name) %>%
+   filter(precinct >=1, precinct <= 34)
 )
-
-## # Source:   lazy query [?? x 5]
-## # Database: sqlite 3.22.0 [/data/nyc_parking/nyc_parking_2014_cleaned.sqlite]
-##    issue_date issuing_agency violation_precinct house_number street_name    
-##         <dbl> <chr>                       <int> <chr>        <chr>          
-##  1      15706 P                              28 102          W 123 ST       
-##  2      15706 P                              23 2121         1 AVE          
-##  3      15706 P                              23 60           E 106 ST       
-##  4      15706 P                               5 54           ELIZABETH ST   
-##  5      15706 P                              26 488-490      ST NICHOLAS AVE
-##  6      15706 P                              26 1420         AMSTERDAM AVE  
-##  7      15706 P                              25 219          E 121 ST       
-##  8      15706 P                              12 630          LEXINGTON AVE  
-##  9      15706 P                              18 413          48 TH ST       
-## 10      15706 P                              25 2123         MADISON AVE    
-## # ... with more rows
 ```
-]
+
+```{r include=FALSE}
+addr_local = collect(addr)
+```
 
 ---
 
 ## SQL Query
 
-.small[
-```{r, eval=FALSE}
+```{r}
 class(addr)
 
-## [1] "tbl_dbi"  "tbl_sql"  "tbl_lazy" "tbl" 
-
 show_query(addr)
-
-## <SQL>
-## SELECT *
-## FROM (SELECT `issue_date`, `issuing_agency`, `violation_precinct`, `house_number`, `street_name`
-## FROM `nyc`)
-## WHERE ((`violation_precinct` >= 1.0) AND (`violation_precinct` <= 34.0))
 ```
-]
 
 
 ---
 
 ## SQL Grouping 
 
-```{r, eval=FALSE}
-addr %>% group_by(issuing_agency, violation_precinct) %>% summarize(n=n())
-
-##  # Source:   lazy query [?? x 3]
-##  # Database: sqlite 3.22.0 [/data/nyc_parking/nyc_parking_2014_cleaned.sqlite]
-##  # Groups:   issuing_agency
-##     issuing_agency violation_precinct     n
-##              <chr>              <int> <int>
-##   1              A                  1    13
-##   2              A                  7     1
-##   3              A                 10    24
-##   4              A                 11     1
-##   5              A                 14    47
-##   6              A                 33    11
-##   7              B                 25     2
-##   8              C                  5    73
-##   9              C                 13     7
-##  10              D                  1     1
-##  # ... with more rows
+```{r}
+addr %>% group_by(issue_date, precinct) %>% summarize(n=n())
 ```
 
 ---
 
 ## SQL Query
 
-```{r, eval=FALSE}
-addr %>% group_by(issuing_agency, violation_precinct) %>% summarize(n=n()) %>% show_query()
-
-## <SQL>
-## SELECT `issuing_agency`, `violation_precinct`, COUNT() AS `n`
-## FROM (SELECT `issue_date` AS `issue_date`, `issuing_agency` AS `issuing_agency`, `violation_precinct` AS `## violation_precinct`, `house_number` AS `house_number`, `street_name` AS `street_name`
-## FROM `nyc`)
-## WHERE ((`violation_precinct` >= 1.0) AND (`violation_precinct` <= 34.0))
-## GROUP BY `issuing_agency`, `violation_precinct`
+```{r}
+addr %>% group_by(issue_date, precinct) %>% summarize(n=n()) %>% show_query()
 ```
 
 ---
 
 ## SQL Translation 
 
-.small[
-In general, dplyr / dbplyr knows how to translate basic math, logical, and summary functions from R to SQL.
-dbplyr has a function, `translate_sql`, that lets you experiment with how R functions are translated to SQL. 
+In general, dplyr / dbplyr knows how to translate basic math, logical, and summary functions from R to SQL. dbplyr has a function, `translate_sql`, that lets you experiment with how R functions are translated to SQL. 
 
-```{r, error=TRUE}
+```{r error=TRUE}
 dbplyr::translate_sql(x == 1 & (y < 2 | z > 3))
 dbplyr::translate_sql(x ^ 2 < 10)
 dbplyr::translate_sql(x %% 2 == 10)
 ```
 
 ```{r error=TRUE}
-dbplyr::translate_sql(paste(x,y))
 dbplyr::translate_sql(mean(x))
+dbplyr::translate_sql(mean(x, na.rm=TRUE))
 ```
-]
+
 
 ---
 
@@ -273,33 +204,62 @@ dbplyr::translate_sql(lm(y~x))
 ## Complications
 
 .small[
-```{r, eval=FALSE}
+```{r}
 addr %>% mutate(address = paste(house_number, street_name))
 
-## # Source:   lazy query [?? x 6]
-## # Database: sqlite 3.22.0 [/data/nyc_parking/nyc_parking_2014_cleaned.sqlite]
-##    issue_date issuing_agency violation_precinct house_number street_name     address                
-##         <dbl> <chr>                       <int> <chr>        <chr>           <chr>                  
-##  1      15706 P                              28 102          W 123 ST        102 W 123 ST           
-##  2      15706 P                              23 2121         1 AVE           2121 1 AVE             
-##  3      15706 P                              23 60           E 106 ST        60 E 106 ST            
-##  4      15706 P                               5 54           ELIZABETH ST    54 ELIZABETH ST        
-##  5      15706 P                              26 488-490      ST NICHOLAS AVE 488-490 ST NICHOLAS AVE
-##  6      15706 P                              26 1420         AMSTERDAM AVE   1420 AMSTERDAM AVE     
-##  7      15706 P                              25 219          E 121 ST        219 E 121 ST           
-##  8      15706 P                              12 630          LEXINGTON AVE   630 LEXINGTON AVE      
-##  9      15706 P                              18 413          48 TH ST        413 48 TH ST           
-## 10      15706 P                              25 2123         MADISON AVE     2123 MADISON AVE       
-## # ... with more rows
-
 addr %>% mutate(address = paste(house_number, street_name)) %>% show_query()
+```
+]
 
-## <SQL>
-## SELECT `issue_date`, `issuing_agency`, `violation_precinct`, `house_number`, `street_name`, 
-##        `house_number` || ' ' || ## `street_name` AS `address`
-## FROM (SELECT `issue_date`, `issuing_agency`, `violation_precinct`, `house_number`, `street_name`
-##       FROM `nyc`)
-## WHERE ((`violation_precinct` >= 1.0) AND (`violation_precinct` <= 34.0))
+---
+
+.small[
+```{r}
+addr %>% mutate(address = paste(house_number, street_name) %>% tolower())
+
+addr %>% mutate(address = paste(house_number, street_name) %>% tolower()) %>% show_query()
+```
+]
+
+
+---
+
+.small[
+```{r error=TRUE}
+addr %>% 
+  mutate(address = paste(house_number, street_name) %>% tolower()) %>%
+  mutate(address = stringr::str_replace(address, " th ", " "))
+```
+
+--
+
+```{r error=TRUE}
+addr %>% 
+  mutate(address = paste(house_number, street_name) %>% tolower()) %>%
+  mutate(address = gsub(" th ", " ", address))
+```
+
+--
+
+```{r error=TRUE}
+addr %>% 
+  mutate(address = paste(house_number, street_name) %>% tolower()) %>%
+  mutate(address = gsub(" th ", " ", address)) %>%
+  show_query()
+```
+]
+
+---
+
+.small[
+```{r}
+addr_local %>% 
+  mutate(address = paste(house_number, street_name) %>% tolower()) %>%
+  mutate(address = stringr::str_replace(address, " th ", " "))
+
+addr_local %>% 
+  mutate(address = paste(house_number, street_name) %>% tolower()) %>%
+  mutate(address = gsub(" th ", " ", address))
 ```
 ]
 
@@ -308,38 +268,50 @@ addr %>% mutate(address = paste(house_number, street_name)) %>% show_query()
 ## (Unfair) Timings 
 
 .small[
-```{r, eval=FALSE}
+```{r}
 system.time(
   nyc %>%
-    select(issue_date, issuing_agency, violation_precinct, house_number, street_name) %>%
-    filter(violation_precinct >=1, violation_precinct <= 34) %>%
-    group_by(issuing_agency, violation_precinct) %>%
+    select(issue_date, precinct = violation_precinct, house_number, street_name) %>%
+    filter(precinct >=1, precinct <= 34) %>%
+    group_by(issue_date, precinct) %>%
     summarize(n=n())
 )
-
-##   user  system elapsed 
-##  0.639   0.099   0.740 
 ```
 ]
 
 .small[
-```{r, eval=FALSE}
+```{r}
 system.time(
   nyc_sql %>%
-    select(issue_date, issuing_agency, violation_precinct, house_number, street_name) %>%
-    filter(violation_precinct >=1, violation_precinct <= 34) %>%
-    group_by(issuing_agency, violation_precinct) %>%
+    select(issue_date, precinct = violation_precinct, house_number, street_name) %>%
+    filter(precinct >=1, precinct <= 34) %>%
+    group_by(issue_date, precinct) %>%
     summarize(n=n())
 )
-
-##   user  system elapsed 
-##  0.024   0.011   0.034 
 ```
 ]
 
 --
 
-`nyc_sql` was ~22x times faster than `nyc`, but the former is disk based while the latter is in memory, why this discrepancy?
+`nyc_sql` was ~100x times faster than `nyc`, but the former is disk based while the latter is in memory, why this discrepancy?
+
+---
+
+.small[
+```{r}
+nyc %>%
+  select(issue_date, precinct = violation_precinct, house_number, street_name) %>%
+  filter(precinct >=1, precinct <= 34) %>%
+  group_by(issue_date, precinct) %>%
+  summarize(n=n())
+
+nyc_sql %>%
+  select(issue_date, precinct = violation_precinct, house_number, street_name) %>%
+  filter(precinct >=1, precinct <= 34) %>%
+  group_by(issue_date, precinct) %>%
+  summarize(n=n())
+```
+]
 
 ---
 
@@ -352,40 +324,10 @@ dplyr / dbplyr uses lazy evaluation as much as possible, particularly when worki
 * Since we would prefer to run one complex query over many simple queries, laziness allows for verbs to be strung together.
 
 * Therefore, by default `dplyr`
-    
-    * won't connect and query the database until absolutely necessary (e.g. show output),
 
-    * and unless explicitly told to, will only query a handful of rows to give a sense of what the result will look like
+* won't connect and query the database until absolutely necessary (e.g. show output),
 
-
----
-
-.small[
-```{r eval=FALSE}
-nyc_sql %>%
-  select(issue_date, issuing_agency, violation_precinct, house_number, street_name) %>%
-  filter(violation_precinct >=1, violation_precinct <= 34) %>%
-  group_by(issuing_agency, violation_precinct) %>%
-  summarize(n=n())
-
-## # Source:   lazy query [?? x 3]
-## # Database: sqlite 3.22.0 [/data/nyc_parking/nyc_parking_2014_cleaned.sqlite]
-## # Groups:   issuing_agency
-##    issuing_agency violation_precinct     n
-##             <chr>              <int> <int>
-##  1              A                  1    13
-##  2              A                  7     1
-##  3              A                 10    24
-##  4              A                 11     1
-##  5              A                 14    47
-##  6              A                 33    11
-##  7              B                 25     2
-##  8              C                  5    73
-##  9              C                 13     7
-## 10              D                  1     1
-## # ... with more rows
-```
-]
+* and unless explicitly told to, will only query a handful of rows to give a sense of what the result will look like.
 
 ---
 
@@ -394,40 +336,62 @@ nyc_sql %>%
 
 To force a full query *and* a return of the complete result it is necessart to use the `collect` function.
 
-```{r, eval=FALSE}
+```{r}
 system.time({
-  nyc_sql %>%
-    select(issue_date, issuing_agency, violation_precinct, house_number, street_name) %>%
-    filter(violation_precinct >=1, violation_precinct <= 34) %>%
-    group_by(issuing_agency, violation_precinct) %>%
+  res = nyc_sql %>%
+    select(issue_date, precinct = violation_precinct, house_number, street_name) %>%
+    filter(precinct >=1, precinct <= 34) %>%
+    group_by(issue_date, precinct) %>%
     summarize(n=n()) %>%
     collect()
 })
 
-##   user  system elapsed 
-##  5.915   0.507   6.445 
-
-## # A tibble: 199 x 3
-## # Groups:   issuing_agency [15]
-##    issuing_agency violation_precinct     n
-##             <chr>              <int> <int>
-##  1              A                  1    13
-##  2              A                  7     1
-##  3              A                 10    24
-##  4              A                 11     1
-##  5              A                 14    47
-##  6              A                 33    11
-##  7              B                 25     2
-##  8              C                  5    73
-##  9              C                 13     7
-## 10              D                  1     1
-## # ... with 189 more rows
+res
 ```
 
 
 `compute` and `collapse` also force a full query but have slightly different behavior and return types. 
 
 ]
+
+---
+
+## `compute`
+
+```{r}
+res_comp = nyc_sql %>%
+  select(issue_date, precinct = violation_precinct, house_number, street_name) %>%
+  filter(precinct >=1, precinct <= 34) %>%
+  group_by(issue_date, precinct) %>%
+  summarize(n=n()) %>%
+  compute()
+
+res_comp
+```
+
+---
+
+.small[
+```{r}
+addr %>% show_query()
+
+addr %>%
+  compute(name = "addresses", temporary = FALSE, 
+          indexes = list("precinct"), 
+          overwrite = TRUE)
+```
+]
+
+---
+
+.small[
+```{r}
+db
+
+tbl(db, "addresses")
+```
+]
+
 
 ---
 

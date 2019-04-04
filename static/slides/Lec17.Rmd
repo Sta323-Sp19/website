@@ -529,7 +529,7 @@ nyc = readr::read_csv("/data/nyc_parking/nyc_parking_2014.csv") %>%
   janitor::clean_names() %>%
   select(registration_state:issuing_agency, 
        violation_location, violation_precinct, violation_time,
-       number:intersecting_street, vehicle_color) %>%
+       house_number:intersecting_street, vehicle_color) %>%
   mutate(issue_date = mdy(issue_date)) %>% 
   mutate(issue_day = day(issue_date),
          issue_month = month(issue_date),
