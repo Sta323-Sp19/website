@@ -57,9 +57,8 @@ ls("package:dplyr") %>% purrr::keep(stringr::str_detect, "^src")
 
 ## Wider Ecosystem
 
-```{r out.width="66%", echo=FALSE}
-knitr::include_graphics("imgs/implyr_logo.png")
-knitr::include_graphics("imgs/sparklyr_logo.png")
+```{r out.width="25%", echo=FALSE}
+knitr::include_graphics(c("imgs/implyr_logo.png", "imgs/sparklyr_logo.png"))
 ```
 
 

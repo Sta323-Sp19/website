@@ -49,7 +49,7 @@ ls("package:dplyr") %&gt;% purrr::keep(stringr::str_detect, "^src")
 
 ## Wider Ecosystem
 
-&lt;img src="imgs/implyr_logo.png" width="66%" style="display: block; margin: auto;" /&gt;&lt;img src="imgs/sparklyr_logo.png" width="66%" style="display: block; margin: auto;" /&gt;
+&lt;img src="imgs/implyr_logo.png" width="25%" style="display: block; margin: auto;" /&gt;&lt;img src="imgs/sparklyr_logo.png" width="25%" style="display: block; margin: auto;" /&gt;
 
 
 ---
@@ -155,9 +155,9 @@ str(nyc_sql)
 ##   .. .. ..@ loadable.extensions: logi TRUE
 ##   .. .. ..@ flags              : int 70
 ##   .. .. ..@ vfs                : chr ""
-##   .. .. ..@ ref                :&lt;environment: 0x55bbdb7b86d0&gt; 
+##   .. .. ..@ ref                :&lt;environment: 0x55c1d97f5fc0&gt; 
 ##   .. .. ..@ bigint             : chr "integer64"
-##   ..$ disco:&lt;environment: 0x55bbd8ddc180&gt; 
+##   ..$ disco:&lt;environment: 0x55c1d6e1e840&gt; 
 ##   ..- attr(*, "class")= chr [1:4] "src_SQLiteConnection" "src_dbi" "src_sql" "src"
 ##  $ ops:List of 2
 ##   ..$ x   : 'ident' chr "nyc"
@@ -575,7 +575,7 @@ system.time(
 
 ```
 ##    user  system elapsed 
-##   0.303   0.129   0.433
+##    0.32    0.11    0.43
 ```
 ]
 
@@ -593,7 +593,7 @@ system.time(
 
 ```
 ##    user  system elapsed 
-##   0.005   0.000   0.004
+##   0.005   0.000   0.005
 ```
 ]
 
@@ -696,7 +696,7 @@ system.time({
 
 ```
 ##    user  system elapsed 
-##   3.687   0.253   3.952
+##   3.683   0.272   3.968
 ```
 
 ```r
@@ -743,7 +743,7 @@ res_comp
 ```
 
 ```
-## # Source:   table&lt;yndlwmikua&gt; [?? x 3]
+## # Source:   table&lt;ybxczjctbo&gt; [?? x 3]
 ## # Database: sqlite 3.22.0 [/data/nyc_parking/nyc_parking_2014_cleaned.sqlite]
 ## # Groups:   issue_date
 ##    issue_date precinct     n
@@ -814,7 +814,7 @@ db
 ```
 ## src:  sqlite 3.22.0 [/data/nyc_parking/nyc_parking_2014_cleaned.sqlite]
 ## tbls: addresses, nyc, sqlite_stat1, sqlite_stat1, sqlite_stat4, sqlite_stat4,
-##   yndlwmikua
+##   ybxczjctbo
 ```
 
 ```r
