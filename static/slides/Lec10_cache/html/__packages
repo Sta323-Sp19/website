@@ -1,0 +1,9 @@
+base
+dplyr
+ggplot2
+patchwork
+gganimate
+gapminder
+bindrcpp
+ggthemes
+extrafont

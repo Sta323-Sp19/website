@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>tidy data</title>
+    <meta charset="utf-8">
+    <meta name="author" content="Colin Rundel" />
+    <meta name="date" content="2018-01-31" />
+    <link href="libs/font-awesome/css/all.css" rel="stylesheet" />
+    <link href="libs/font-awesome/css/v4-shims.css" rel="stylesheet" />
+    <link rel="stylesheet" href="slides.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# tidy data
+### Colin Rundel
+### 2018-01-31
+
+---
+
+exclude: true
+
+
+
+---
+
+## Tidy data
+
+&lt;img src="imgs/tidy.png" width="100%" /&gt;
+* One variable per column
+* One observation per row
+* Each type of observational unit forms a table
+
+.footnote[ From R4DS - [tidy data](r4ds.had.co.nz/tidy-data.html) ]
+
+---
+class: middle
+count: false
+
+.center[
+&lt;img src="imgs/hex-tidyr.png" width="50%" /&gt;
+]
+
+---
+
+## Gather
+
+&lt;img src="imgs/tidyr_gather.png" width="60%" style="display: block; margin: auto;" /&gt;
+
+.footnote[ From [data import cheatsheet](https://github.com/rstudio/cheatsheets/blob/master/data-import.pdf) ]
+
+---
+
+## Spread
+
+&lt;img src="imgs/tidyr_spread.png" width="70%" style="display: block; margin: auto;" /&gt;
+
+.footnote[ From [data import cheatsheet](https://github.com/rstudio/cheatsheets/blob/master/data-import.pdf) ]
+
+---
+
+## Separate
+
+&lt;img src="imgs/tidyr_separate.png" width="70%" style="display: block; margin: auto;" /&gt;
+
+.footnote[ From [data import cheatsheet](https://github.com/rstudio/cheatsheets/blob/master/data-import.pdf) ]
+
+---
+
+## Unite
+
+&lt;img src="imgs/tidyr_unite.png" width="70%" style="display: block; margin: auto;" /&gt;
+
+.footnote[ From [data import cheatsheet](https://github.com/rstudio/cheatsheets/blob/master/data-import.pdf) ]
+
+---
+class: middle
+count: false
+
+# Example 1 - Grades
+
+---
+
+## Tidy?
+
+
+```r
+grades = tibble(
+  name  = c("Alice", "Bob", "Carol", "Dave"),
+  hw_1   = c(19, 18, 18, 19),
+  hw_2   = c(19, 20, 20, 19),
+  hw_3   = c(18, 18, 18, 18),
+  hw_4   = c(20, 16, 17, 19),
+  exam_1 = c(89, 77, 96, 86),
+  exam_2 = c(95, 88, 99, 82)
+)
+```
+
+---
+
+## Wide -&gt; Long (Gather)
+
+.small[ .pull-left[
+
+```r
+gather(grades, item, score, hw_1:exam_2)
+```
+
+```
+## # A tibble: 24 x 3
+##    name  item  score
+##    &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;
+##  1 Alice hw_1     19
+##  2 Bob   hw_1     18
+##  3 Carol hw_1     18
+##  4 Dave  hw_1     19
+##  5 Alice hw_2     19
+##  6 Bob   hw_2     20
+##  7 Carol hw_2     20
+##  8 Dave  hw_2     19
+##  9 Alice hw_3     18
+## 10 Bob   hw_3     18
+## # … with 14 more rows
+```
+] ]
+
+--
+
+.small[ .pull-right[
+
+```r
+gather(grades, item, score, -name)
+```
+
+```
+## # A tibble: 24 x 3
+##    name  item  score
+##    &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;
+##  1 Alice hw_1     19
+##  2 Bob   hw_1     18
+##  3 Carol hw_1     18
+##  4 Dave  hw_1     19
+##  5 Alice hw_2     19
+##  6 Bob   hw_2     20
+##  7 Carol hw_2     20
+##  8 Dave  hw_2     19
+##  9 Alice hw_3     18
+## 10 Bob   hw_3     18
+## # … with 14 more rows
+```
+] ]
+
+---
+
+## Untidy approach
+
+
+```r
+grades %&gt;%
+  mutate(
+    hw_avg = (hw_1+hw_2+hw_3+hw_4)/4,
+    exam_avg = (exam_1+exam_2)/2,
+    overall = 0.4*(exam_avg/100) + 0.6*(hw_avg/20)
+  )
+```
+
+```
+## # A tibble: 4 x 10
+##   name   hw_1  hw_2  hw_3  hw_4 exam_1 exam_2 hw_avg exam_avg overall
+##   &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;
+## 1 Alice    19    19    18    20     89     95   19       92     0.938
+## 2 Bob      18    20    18    16     77     88   18       82.5   0.87 
+## 3 Carol    18    20    18    17     96     99   18.2     97.5   0.938
+## 4 Dave     19    19    18    19     86     82   18.8     84     0.899
+```
+
+---
+
+## Tidy approach
+
+
+```r
+grades %&gt;%
+  gather(item, score, -name) %&gt;%
+  separate(item, c("type","num"), sep = "_") %&gt;%
+  group_by(name, type) %&gt;%
+  summarize(avg = mean(score)) %&gt;%
+  spread(type, avg) %&gt;%
+  mutate(overall = 0.4*(exam/100) + 0.6*(hw/20))
+```
+
+```
+## # A tibble: 4 x 4
+## # Groups:   name [4]
+##   name   exam    hw overall
+##   &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;
+## 1 Alice  92    19     0.938
+## 2 Bob    82.5  18     0.87 
+## 3 Carol  97.5  18.2   0.938
+## 4 Dave   84    18.8   0.899
+```
+
+---
+class: middle
+count: false
+
+# Example 2 - tb
+
+---
+
+## Tidy?
+
+
+```r
+(tb = readr::read_csv(
+  paste0("https://github.com/tidyverse/",
+  "tidyr/raw/master/vignettes/tb.csv")
+))
+```
+
+```
+## # A tibble: 5,769 x 22
+##    iso2   year   m04  m514  m014 m1524 m2534 m3544 m4554 m5564   m65    mu   f04
+##    &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1 AD     1989    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA
+##  2 AD     1990    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA
+##  3 AD     1991    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA
+##  4 AD     1992    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA
+##  5 AD     1993    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA
+##  6 AD     1994    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA
+##  7 AD     1996    NA    NA     0     0     0     4     1     0     0    NA    NA
+##  8 AD     1997    NA    NA     0     0     1     2     2     1     6    NA    NA
+##  9 AD     1998    NA    NA     0     0     0     1     0     0     0    NA    NA
+## 10 AD     1999    NA    NA     0     0     0     1     1     0     0    NA    NA
+## # … with 5,759 more rows, and 9 more variables: f514 &lt;dbl&gt;, f014 &lt;dbl&gt;,
+## #   f1524 &lt;dbl&gt;, f2534 &lt;dbl&gt;, f3544 &lt;dbl&gt;, f4554 &lt;dbl&gt;, f5564 &lt;dbl&gt;, f65 &lt;dbl&gt;,
+## #   fu &lt;dbl&gt;
+```
+
+---
+## Codebook
+
+| Column | Meaning             |
+|--------|:--------------------|
+| `iso2` |  2 digit iso country code
+| `year` |  year
+| `m04`  |  Males, 0 - 4
+| `m514` |  Males, 5 - 14
+| `m014` |  Males, 0 - 14
+| ...    | ...
+| `m65`  |  Males, 65+
+| `mu`   |  Males, unknown
+| ...    | ...
+
+---
+
+## Moving columns to rows
+
+.pull-left[
+
+```r
+tb %&gt;% 
+  gather(
+    group, counts, 
+    -iso2, -year
+  
+  )
+```
+
+```
+## # A tibble: 115,380 x 4
+##    iso2   year group counts
+##    &lt;chr&gt; &lt;dbl&gt; &lt;chr&gt;  &lt;dbl&gt;
+##  1 AD     1989 m04       NA
+##  2 AD     1990 m04       NA
+##  3 AD     1991 m04       NA
+##  4 AD     1992 m04       NA
+##  5 AD     1993 m04       NA
+##  6 AD     1994 m04       NA
+##  7 AD     1996 m04       NA
+##  8 AD     1997 m04       NA
+##  9 AD     1998 m04       NA
+## 10 AD     1999 m04       NA
+## # … with 115,370 more rows
+```
+]
+
+.pull-right[
+
+```r
+tb %&gt;% 
+  gather(
+    group, counts, 
+    -iso2, -year, 
+    na.rm = TRUE
+  )
+```
+
+```
+## # A tibble: 35,750 x 4
+##    iso2   year group counts
+##    &lt;chr&gt; &lt;dbl&gt; &lt;chr&gt;  &lt;dbl&gt;
+##  1 AD     2005 m04        0
+##  2 AD     2006 m04        0
+##  3 AD     2008 m04        0
+##  4 AE     2006 m04        0
+##  5 AE     2007 m04        0
+##  6 AE     2008 m04        0
+##  7 AG     2007 m04        0
+##  8 AL     2005 m04        0
+##  9 AL     2006 m04        1
+## 10 AL     2007 m04        0
+## # … with 35,740 more rows
+```
+]
+
+---
+
+## Moving columns to rows
+
+
+```r
+tb %&gt;% 
+  gather(group, counts, -iso2, -year, na.rm = TRUE) %&gt;%
+  separate(group, into = c("gender","age"), 1)
+```
+
+```
+## # A tibble: 35,750 x 5
+##    iso2   year gender age   counts
+##    &lt;chr&gt; &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;  &lt;dbl&gt;
+##  1 AD     2005 m      04         0
+##  2 AD     2006 m      04         0
+##  3 AD     2008 m      04         0
+##  4 AE     2006 m      04         0
+##  5 AE     2007 m      04         0
+##  6 AE     2008 m      04         0
+##  7 AG     2007 m      04         0
+##  8 AL     2005 m      04         0
+##  9 AL     2006 m      04         1
+## 10 AL     2007 m      04         0
+## # … with 35,740 more rows
+```
+
+---
+
+## Fixing ages
+
+
+```r
+(tb = tb %&gt;% 
+  gather(group, counts, -iso2, -year, na.rm=TRUE) %&gt;%
+  separate(group, into = c("gender","age"), 1) %&gt;%
+  mutate(
+    age = case_when(
+      age == "04" ~ "0-4",     age == "514" ~ "5-14",
+      age == "014" ~ "0-14",   age == "1524" ~ "15-24",
+      age == "2534" ~ "25-34", age == "3544" ~ "35-44",
+      age == "4554" ~ "45-54", age == "5564" ~ "55-64",
+      age == "65" ~ "65+",     age == "u" ~ NA_character_
+    )
+  )
+)
+```
+
+```
+## # A tibble: 35,750 x 5
+##    iso2   year gender age   counts
+##    &lt;chr&gt; &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;  &lt;dbl&gt;
+##  1 AD     2005 m      0-4        0
+##  2 AD     2006 m      0-4        0
+##  3 AD     2008 m      0-4        0
+##  4 AE     2006 m      0-4        0
+##  5 AE     2007 m      0-4        0
+##  6 AE     2008 m      0-4        0
+##  7 AG     2007 m      0-4        0
+##  8 AL     2005 m      0-4        0
+##  9 AL     2006 m      0-4        1
+## 10 AL     2007 m      0-4        0
+## # … with 35,740 more rows
+```
+
+---
+
+## Moving rows to columns
+
+
+```r
+tb %&gt;%
+  spread(gender, counts) %&gt;%
+  mutate(total = m + f)
+```
+
+```
+## # A tibble: 18,029 x 6
+##    iso2   year age       f     m total
+##    &lt;chr&gt; &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1 AD     1996 0-14      0     0     0
+##  2 AD     1996 15-24     1     0     1
+##  3 AD     1996 25-34     1     0     1
+##  4 AD     1996 35-44     0     4     4
+##  5 AD     1996 45-54     0     1     1
+##  6 AD     1996 55-64     1     0     1
+##  7 AD     1996 65+       0     0     0
+##  8 AD     1997 0-14      0     0     0
+##  9 AD     1997 15-24     1     0     1
+## 10 AD     1997 25-34     2     1     3
+## # … with 18,019 more rows
+```
+
+---
+
+## Exercise 1
+
+.small[ 
+`NETemp.dat` contains monthly temperature data (Celsius) recorded across the Northeastern US starting in January 2000. Using these data calculate the average monthly temperature across all of these sites.
+
+
+```r
+data("NETemp.dat", package = "spBayes")
+(ne_temp = as_tibble(NETemp.dat))
+```
+
+```
+## # A tibble: 356 x 132
+##     elev   UTMX   UTMY    y.1    y.2   y.3   y.4   y.5   y.6   y.7   y.8   y.9
+##    &lt;int&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1   288 5.92e6 2.83e6 -5.28  -1.67   4.83  7.83  14.3  18.4  19.1  19.3  15  
+##  2    25 5.93e6 2.76e6 -1.89   1.11   6.22  8.61  15.3  20.3  21.3  21.6  18.2
+##  3    42 5.95e6 2.85e6 -4.44  -0.556  6.5   8.78  15.3  19.8  20.9  20.9  16.7
+##  4    15 5.79e6 2.46e6 -0.278  2.56   8.5  11.1   17.7  22.2  22.7  22.6  18.3
+##  5   254 4.66e6 2.61e6 -5.56  -0.833  6.28  8.28  15.9  18.6  20.7  21.2  16.8
+##  6   147 4.63e6 2.12e6  0.722  5.61   9.17 12.1   19.8  22.7  24.4  25.3  19.8
+##  7   213 4.63e6 2.46e6 -3.83   2      8    11     18.9  21.4  22.3  23.4  19.7
+##  8   196 4.69e6 2.62e6 -3.61   0.944  6.67  8     16.1  19.7  21.3  22.2  18.4
+##  9   201 4.68e6 2.60e6 -3.72   1.17   6.78  8.44  16.7  19.6  21.7  22.4  18.2
+## 10   183 4.72e6 2.40e6 -3.11   3.22   8    10.7   18.8  21.4  22.8  23.8  19.3
+## # … with 346 more rows, and 120 more variables: y.10 &lt;dbl&gt;, y.11 &lt;dbl&gt;,
+## #   y.12 &lt;dbl&gt;, y.13 &lt;dbl&gt;, y.14 &lt;dbl&gt;, y.15 &lt;dbl&gt;, y.16 &lt;dbl&gt;, y.17 &lt;dbl&gt;,
+## #   y.18 &lt;dbl&gt;, y.19 &lt;dbl&gt;, y.20 &lt;dbl&gt;, y.21 &lt;dbl&gt;, y.22 &lt;dbl&gt;, y.23 &lt;dbl&gt;,
+## #   y.24 &lt;dbl&gt;, y.25 &lt;dbl&gt;, y.26 &lt;dbl&gt;, y.27 &lt;dbl&gt;, y.28 &lt;dbl&gt;, y.29 &lt;dbl&gt;,
+## #   y.30 &lt;dbl&gt;, y.31 &lt;dbl&gt;, y.32 &lt;dbl&gt;, y.33 &lt;dbl&gt;, y.34 &lt;dbl&gt;, y.35 &lt;dbl&gt;,
+## #   y.36 &lt;dbl&gt;, y.37 &lt;dbl&gt;, y.38 &lt;dbl&gt;, y.39 &lt;dbl&gt;, y.40 &lt;dbl&gt;, y.41 &lt;dbl&gt;,
+## #   y.42 &lt;dbl&gt;, y.43 &lt;dbl&gt;, y.44 &lt;dbl&gt;, y.45 &lt;dbl&gt;, y.46 &lt;dbl&gt;, y.47 &lt;dbl&gt;,
+## #   y.48 &lt;dbl&gt;, y.49 &lt;dbl&gt;, y.50 &lt;dbl&gt;, y.51 &lt;dbl&gt;, y.52 &lt;dbl&gt;, y.53 &lt;dbl&gt;,
+## #   y.54 &lt;dbl&gt;, y.55 &lt;dbl&gt;, y.56 &lt;dbl&gt;, y.57 &lt;dbl&gt;, y.58 &lt;dbl&gt;, y.59 &lt;dbl&gt;,
+## #   y.60 &lt;dbl&gt;, y.61 &lt;dbl&gt;, y.62 &lt;dbl&gt;, y.63 &lt;dbl&gt;, y.64 &lt;dbl&gt;, y.65 &lt;dbl&gt;,
+## #   y.66 &lt;dbl&gt;, y.67 &lt;dbl&gt;, y.68 &lt;dbl&gt;, y.69 &lt;dbl&gt;, y.70 &lt;dbl&gt;, y.71 &lt;dbl&gt;,
+## #   y.72 &lt;dbl&gt;, y.73 &lt;dbl&gt;, y.74 &lt;dbl&gt;, y.75 &lt;dbl&gt;, y.76 &lt;dbl&gt;, y.77 &lt;dbl&gt;,
+## #   y.78 &lt;dbl&gt;, y.79 &lt;dbl&gt;, y.80 &lt;dbl&gt;, y.81 &lt;dbl&gt;, y.82 &lt;dbl&gt;, y.83 &lt;dbl&gt;,
+## #   y.84 &lt;dbl&gt;, y.85 &lt;dbl&gt;, y.86 &lt;dbl&gt;, y.87 &lt;dbl&gt;, y.88 &lt;dbl&gt;, y.89 &lt;dbl&gt;,
+## #   y.90 &lt;dbl&gt;, y.91 &lt;dbl&gt;, y.92 &lt;dbl&gt;, y.93 &lt;dbl&gt;, y.94 &lt;dbl&gt;, y.95 &lt;dbl&gt;,
+## #   y.96 &lt;dbl&gt;, y.97 &lt;dbl&gt;, y.98 &lt;dbl&gt;, y.99 &lt;dbl&gt;, y.100 &lt;dbl&gt;, y.101 &lt;dbl&gt;,
+## #   y.102 &lt;dbl&gt;, y.103 &lt;dbl&gt;, y.104 &lt;dbl&gt;, y.105 &lt;dbl&gt;, y.106 &lt;dbl&gt;,
+## #   y.107 &lt;dbl&gt;, y.108 &lt;dbl&gt;, y.109 &lt;dbl&gt;, …
+```
+]
+    </textarea>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function() {
+  var d = document, s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})();</script>
+
+<script>
+(function() {
+  var i, text, code, codes = document.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+})();
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

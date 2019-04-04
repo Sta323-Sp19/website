@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ggplot2 addons</title>
+    <meta charset="utf-8">
+    <meta name="author" content="Colin Rundel" />
+    <meta name="date" content="2019-02-19" />
+    <link rel="stylesheet" href="slides.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# ggplot2 addons
+### Colin Rundel
+### 2019-02-19
+
+---
+
+exclude: true
+
+
+
+---
+
+## ggplot objects
+
+
+```r
+g = ggplot(diamonds, aes(x = carat, y = price)) + geom_point()
+class(g)
+```
+
+```
+## [1] "gg"     "ggplot"
+```
+
+--
+
+.pull-left[
+
+```r
+g
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-2-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+]
+
+.pull-right[
+
+```r
+g + geom_smooth()
+```
+
+```
+## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-3-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+]
+
+---
+class: middle
+
+&lt;img src="imgs/patchwork_logo.png" width="30%" style="display: block; margin: auto;" /&gt;
+
+---
+
+## Plots
+
+
+```r
+p1 = ggplot(diamonds) + geom_point(aes(x = carat, y = price))
+
+p2 = ggplot(diamonds) + geom_boxplot(aes(x = cut, y = price))
+
+p3 = ggplot(diamonds) + geom_boxplot(aes(x = color, y = price))
+
+p4 = ggplot(diamonds) + geom_boxplot(aes(x = clarity, y = price))
+```
+
+---
+
+
+```r
+p1 + p2 + p3 + p4
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-6-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+
+---
+
+
+```r
+p1 + p2 + p3 + p4 + plot_layout(nrow=1)
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-7-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+
+---
+
+
+```r
+p1 / (p2 + p3 + p4)
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-8-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+
+---
+
+
+```r
+p1 + {
+  p2 + {
+    p3 + p4 + plot_layout(ncol = 1)
+  }
+} + plot_layout(ncol = 1)
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-9-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+
+---
+
+
+```r
+p1 + p2 + p3 + p4 + plot_annotation(title = "Diamonds data", tag_levels = c("A","1"))
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-10-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+
+---
+
+
+```r
+p1 + {
+  p2 + {
+    p3 + p4 + plot_layout(ncol = 1, tag_level = "new")
+  }
+} + 
+  plot_layout(ncol = 1) + 
+  plot_annotation(tag_levels = c("A","1"), tag_sep = ".")
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-11-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+
+---
+class: middle
+
+# ggthemes
+
+
+---
+
+## Extra themes
+
+.small[
+
+```r
+library(ggthemes)
+g = ggplot(diamonds, aes(x=carat, y=price, color=cut)) + geom_point()
+```
+
+.pull-left[
+
+```r
+g
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-13-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+
+
+```r
+g + theme_base()
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-14-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+]
+
+.pull-right[
+
+```r
+g + theme_economist()
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-15-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+
+
+```r
+g + theme_fivethirtyeight()
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-16-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+]
+]
+
+---
+
+## (more) Extra themes
+
+.small[
+.pull-left[
+
+```r
+g + theme_gdocs()
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-17-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+
+
+```r
+g + theme_stata()
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-18-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+]
+
+.pull-right[
+
+```r
+g + theme_tufte()
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-19-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+
+
+```r
+g + theme_wsj()
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-20-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+]
+]
+
+---
+
+## xkcd
+
+
+```r
+library(extrafont)
+font_import(pattern = "[X/x]kcd", prompt=FALSE)
+g + geom_smooth(se=FALSE) + xkcd::theme_xkcd()
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-21-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+
+
+---
+class: middle
+
+&lt;img src="https://github.com/thomasp85/gganimate/raw/master/man/figures/logo.png" width="30%" style="display: block; margin: auto;" /&gt;
+
+---
+
+## Gapminder
+
+.small[
+
+```r
+library(gapminder)
+
+ggplot(gapminder, aes(gdpPercap, lifeExp, size = pop, color = country)) +
+  geom_point(alpha = 0.7, show.legend = FALSE) +
+  scale_color_manual(values = country_colors) +
+  scale_size(range = c(2, 12)) +
+  scale_x_log10() +
+  facet_wrap(~continent) +
+  labs(x = 'GDP per capita', y = 'life expectancy')
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-23-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+.small[
+
+```r
+gapminder %&gt;%
+  filter(year &gt; 1985) %&gt;%
+  ggplot(aes(gdpPercap, lifeExp, size = pop, color = country)) +
+    geom_point(alpha = 0.7, show.legend = FALSE) +
+    scale_color_manual(values = country_colors) +
+    scale_size(range = c(2, 12)) +
+    scale_x_log10() +
+    facet_grid(year~continent) +
+    labs(x = 'GDP per capita', y = 'life expectancy')
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-24-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+.small[
+
+```r
+gapminder %&gt;%
+  ggplot(aes(gdpPercap, lifeExp, size = pop, color = country)) +
+    geom_point(alpha = 0.7, show.legend = FALSE) +
+    scale_color_manual(values = country_colors) +
+    scale_size(range = c(2, 12)) +
+    scale_x_log10() +
+    facet_wrap(~year) +
+    labs(x = 'GDP per capita', y = 'life expectancy')
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-25-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+.small[
+
+```r
+library(gganimate)
+
+ggplot(gapminder, aes(gdpPercap, lifeExp, size = pop, colour = country)) +
+  geom_point(alpha = 0.7, show.legend = FALSE) +
+  scale_colour_manual(values = country_colors) +
+  scale_size(range = c(2, 12)) +
+  scale_x_log10() +
+  facet_wrap(~continent) +
+  labs(title = 'Year: {frame_time}', x = 'GDP per capita', y = 'life expectancy') +
+  transition_time(year) +
+  ease_aes('linear')
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-26-1.gif" width="100%" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+.small[
+
+```r
+ggplot(gapminder, aes(gdpPercap, lifeExp, size = pop, colour = country)) +
+  geom_point(alpha = 0.7, show.legend = FALSE) +
+  scale_colour_manual(values = country_colors) +
+  scale_size(range = c(2, 12)) +
+  scale_x_log10() +
+  #facet_wrap(~continent) +
+  labs(title = 'Year: {frame_time}', x = 'GDP per capita', y = 'life expectancy') +
+  transition_time(year) +
+  ease_aes('linear')
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-27-1.gif" width="100%" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+## Datasaurus - [source](https://github.com/thomasp85/gganimate/wiki/The-Datasaurus-Dozen)
+
+.small[
+
+```r
+ggplot(datasauRus::datasaurus_dozen, aes(x=x, y=y))+
+  geom_point()+
+  transition_states(dataset, transition_length = 3, state_length = 1) + 
+  ease_aes('cubic-in-out')
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-28-1.gif" width="100%" style="display: block; margin: auto;" /&gt;
+]
+
+---
+
+## Temperature time series - [source](https://github.com/thomasp85/gganimate/wiki/Temperature-time-series)
+
+.small[
+
+```r
+airq = mutate(airquality, Month = month.name[Month])
+
+ggplot(airq, aes(Day, Temp, group = Month)) + 
+  geom_line() + 
+  geom_segment(aes(xend = 31, yend = Temp), linetype = 2, colour = 'grey') + 
+  geom_point(size = 2) + 
+  geom_text(aes(x = 31.1, label = Month), hjust = 0) + 
+  coord_cartesian(clip = 'off') + 
+  labs(title = 'Temperature in New York', y = 'Temperature (°F)') + 
+  theme_minimal() + 
+  theme(plot.margin = margin(5.5, 40, 5.5, 5.5)) +
+  transition_reveal(Day)
+```
+
+&lt;img src="Lec10_files/figure-html/unnamed-chunk-29-1.gif" width="100%" style="display: block; margin: auto;" /&gt;
+]
+    </textarea>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function() {
+  var d = document, s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})();</script>
+
+<script>
+(function() {
+  var i, text, code, codes = document.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+})();
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

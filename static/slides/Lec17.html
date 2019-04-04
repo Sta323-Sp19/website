@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+  <head>
+    <title>Bigish data</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Colin Rundel" />
+    <meta name="date" content="2019-04-02" />
+    <link href="libs/font-awesome/css/all.css" rel="stylesheet" />
+    <link href="libs/font-awesome/css/v4-shims.css" rel="stylesheet" />
+    <link rel="stylesheet" href="slides.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Bigish data
+### Colin Rundel
+### 2019-04-02
+
+---
+
+exclude: true
+
+
+
+---
+class: middle
+count: false
+
+# Background
+
+---
+
+## Big vs Bigish data
+
+* We will be working with data that is large, but it will still fit in memory. 
+
+* R *loves* to make extra copies of objects, so we need to be careful - even a handful of copies with exhaust the memory on most systems. 
+    
+    * Less of an issue on gort / saxon (256 GB of Ram), but this is a shared resource - use too much and your session will be killed.
+
+
+---
+class: middle
+count: false
+
+# Reading Data
+
+---
+
+## Reading NYC parking data
+
+If we use the basic approach of `read.csv`, we end up waiting a really long time,
+
+
+```r
+system.time(read.csv("/data/nyc_parking/nyc_parking_2014.csv"))
+
+##    user  system elapsed  
+## 377.359   7.080 384.411 
+```
+
+Over 6 minutes to read in a 1.7 gigabyte CSV file.
+
+---
+
+## Improvements 
+
+If we use `stringsAsFactors` and `comment.char` arguments we can speed things up a bit.
+
+
+```r
+system.time(
+  read.csv(
+    "/data/nyc_parking/nyc_parking_2014.csv", 
+    stringsAsFactors=FALSE, 
+    comment.char=""
+  )
+)
+
+##    user  system elapsed 
+## 281.399   4.615 285.975 
+```
+
+We can take this farther by specifying the structure of the data using the `colClasses` argument.
+
+---
+
+## Alternatives - data.table
+
+.small[
+
+```r
+system.time({
+  nyc_fread = data.table::fread("/data/nyc_parking/nyc_parking_2014.csv")
+})
+
+## |--------------------------------------------------|
+## |==================================================|
+##    user  system elapsed 
+##  44.636   2.393  24.606 
+
+class(nyc_fread)
+
+## "data.table" "data.frame"
+
+nyc = as.data.frame(nyc_fread)
+class(nyc)
+
+## [1] "data.frame"
+```
+]
+
+---
+
+## Alternatives - readr 
+
+.small[
+
+```r
+system.time({
+  nyc = readr::read_csv("/data/nyc_parking/nyc_parking_2014.csv")
+})
+  
+## Parsed with column specification:
+## cols(
+##   .default = col_character(),
+##   `Summons Number` = col_double(),
+##   `Violation Code` = col_integer(),
+##   `Street Code1` = col_integer(),
+##   `Street Code2` = col_integer(),
+##   `Street Code3` = col_integer(),
+##   `Vehicle Expiration Date` = col_integer(),
+##   `Violation Precinct` = col_integer(),
+##   `Issuer Precinct` = col_integer(),
+##   `Issuer Code` = col_integer(),
+##   `Date First Observed` = col_integer(),
+##   `Law Section` = col_integer(),
+##   `Violation Legal Code` = col_integer(),
+##   `Unregistered Vehicle?` = col_integer(),
+##   `Vehicle Year` = col_integer(),
+##   `Feet From Curb` = col_integer()
+## )
+## See spec(...) for full column specifications.
+## |========================================| 100% 1713 MB
+
+##   user  system elapsed 
+## 97.474  10.719 129.293 
+```
+]
+
+---
+
+## Problems
+
+.small[
+
+```r
+readr::problems(nyc)
+
+## # A tibble: 654,437 x 5
+##      row col                  expected   actual file                                       
+##    &lt;int&gt; &lt;chr&gt;                &lt;chr&gt;      &lt;chr&gt;  &lt;chr&gt;                                      
+##  1  2647 Violation Legal Code an integer T      '/data/nyc_parking/nyc_parking_2014.csv'
+##  2  3792 Violation Legal Code an integer T      '/data/nyc_parking/nyc_parking_2014.csv'
+##  3  4001 Violation Legal Code an integer T      '/data/nyc_parking/nyc_parking_2014.csv'
+##  4  4002 Violation Legal Code an integer T      '/data/nyc_parking/nyc_parking_2014.csv'
+##  5  4003 Violation Legal Code an integer T      '/data/nyc_parking/nyc_parking_2014.csv'
+##  6  4004 Violation Legal Code an integer T      '/data/nyc_parking/nyc_parking_2014.csv'
+##  7  4005 Violation Legal Code an integer T      '/data/nyc_parking/nyc_parking_2014.csv'
+##  8  4006 Violation Legal Code an integer T      '/data/nyc_parking/nyc_parking_2014.csv'
+##  9  4019 Violation Legal Code an integer T      '/data/nyc_parking/nyc_parking_2014.csv'
+## 10  4059 Violation Legal Code an integer T      '/data/nyc_parking/nyc_parking_2014.csv'
+## # ... with 654,427 more rows
+```
+]
+
+---
+
+## readr 
+
+This is a recent package that is designed to be a fast and friendly way of reading tabular data into R.
+
+&lt;br/&gt;
+
+Core features:
+
+* Faster than base R (~3-4x)
+
+* No strings as factors
+
+* No column name mangling
+
+* Consistent argument/function naming scheme
+
+* Plays nice with dplyr (`tbl_df`)
+
+* Progress bars
+
+---
+
+.small[
+
+```r
+nyc
+
+## Source: local data frame [9,100,278 x 43]
+## 
+##    Summons Number Plate ID Registration State Plate Type issue_date Violation Code
+##             (dbl)    (chr)              (chr)      (chr)      (chr)          (int)
+## 1      1361929741  FCJ5493                 NY        PAS 12/18/1970             20
+## 2      1366962000  63540MC                 NY        COM 02/02/1971             46
+## 3      1356906515  GFM1421                 NY        PAS 09/18/1971             40
+## 4      1342296217  FYM5117                 NY        SRF 09/18/1971             21
+## 5      1342296199  95V6675                 TX        PAS 09/18/1971             21
+## 6      1342296187  GCY4187                 NY        SRF 09/18/1971             21
+## 7      1337077380  18972BB                 NY        999 10/10/1971             14
+## 8      1364523796  WNJ4730                 VA        PAS 04/05/1973             14
+## 9      1359914924  68091JZ                 NY        COM 07/22/1973             46
+## 10     1355498326  EWV4127                 NY        PAS 08/12/1973             21
+## ..            ...      ...                ...        ...        ...            ...
+## Variables not shown: Vehicle Body Type (chr), Vehicle Make (chr), Issuing Agency (chr),
+##   Street Code1 (int), Street Code2 (int), Street Code3 (int), Vehicle Expiration Date
+##   (int), Violation Location (chr), Violation Precinct (int), Issuer Precinct (int),
+##   Issuer Code (int), Issuer Command (chr), Issuer Squad (chr), Violation Time (chr), Time
+##   First Observed (chr), Violation County (chr), Violation In Front Of Or Opposite (chr),
+##   House Number (chr), Street Name (chr), Intersecting Street (chr), Date First Observed
+##   (int), Law Section (int), Sub Division (chr), Violation Legal Code (int), Days Parking
+##   In Effect (chr), From Hours In Effect (chr), To Hours In Effect (chr), Vehicle Color
+##   (chr), Unregistered Vehicle? (int), Vehicle Year (int), Meter Number (chr), Feet From
+##   Curb (int), Violation Post Code (chr), Violation Description (chr), No Standing or
+##   Stopping Violation (chr), Hydrant Violation (chr), Double Parking Violation (chr)
+```
+]
+
+---
+
+## Fixing column names
+
+.small[
+
+```r
+(nyc = janitor::clean_names(nyc))
+
+## # A tibble: 9,100,278 x 43
+##    summons_number plate_id registration_st… plate_type issue_date violation_code
+##             &lt;dbl&gt; &lt;chr&gt;    &lt;chr&gt;            &lt;chr&gt;      &lt;chr&gt;               &lt;int&gt;
+##  1     1361929741 FCJ5493  NY               PAS        12/18/1970             20
+##  2     1366962000 63540MC  NY               COM        02/02/1971             46
+##  3     1356906515 GFM1421  NY               PAS        09/18/1971             40
+##  4     1342296217 FYM5117  NY               SRF        09/18/1971             21
+##  5     1342296199 95V6675  TX               PAS        09/18/1971             21
+##  6     1342296187 GCY4187  NY               SRF        09/18/1971             21
+##  7     1337077380 18972BB  NY               999        10/10/1971             14
+##  8     1364523796 WNJ4730  VA               PAS        04/05/1973             14
+##  9     1359914924 68091JZ  NY               COM        07/22/1973             46
+## 10     1355498326 EWV4127  NY               PAS        08/12/1973             21
+## # ... with 9,100,268 more rows, and 37 more variables: vehicle_body_type &lt;chr&gt;,
+## #   vehicle_make &lt;chr&gt;, issuing_agency &lt;chr&gt;, street_code1 &lt;int&gt;, street_code2 &lt;int&gt;,
+## #   street_code3 &lt;int&gt;, vehicle_expiration_date &lt;int&gt;, violation_location &lt;chr&gt;,
+## #   violation_precinct &lt;int&gt;, issuer_precinct &lt;int&gt;, issuer_code &lt;int&gt;,
+## #   issuer_command &lt;chr&gt;, issuer_squad &lt;chr&gt;, violation_time &lt;chr&gt;,
+## #   time_first_observed &lt;chr&gt;, violation_county &lt;chr&gt;,
+## #   violation_in_front_of_or_opposite &lt;chr&gt;, house_number &lt;chr&gt;, street_name &lt;chr&gt;,
+## #   intersecting_street &lt;chr&gt;, date_first_observed &lt;int&gt;, law_section &lt;int&gt;,
+## #   sub_division &lt;chr&gt;, violation_legal_code &lt;int&gt;, days_parking_in_effect &lt;chr&gt;,
+## #   from_hours_in_effect &lt;chr&gt;, to_hours_in_effect &lt;chr&gt;, vehicle_color &lt;chr&gt;,
+## #   unregistered_vehicle &lt;int&gt;, vehicle_year &lt;int&gt;, meter_number &lt;chr&gt;,
+## #   feet_from_curb &lt;int&gt;, violation_post_code &lt;chr&gt;, violation_description &lt;chr&gt;,
+## #   no_standing_or_stopping_violation &lt;chr&gt;, hydrant_violation &lt;chr&gt;,
+## #   double_parking_violation &lt;chr&gt;
+```
+]
+
+---
+
+## Simplifying 
+
+There is a lot of variables we won't care about for the time being, so lets make life easier by selecting a subset of columns.
+
+.small[
+
+```r
+(nyc_trim = nyc %&gt;% 
+  select(registration_state:issuing_agency, 
+         violation_location, violation_precinct, violation_time,
+         house_number:intersecting_street, vehicle_color))
+
+## # A tibble: 9,100,278 x 14
+##    registration_st… plate_type issue_date violation_code vehicle_body_ty… vehicle_make
+##    &lt;chr&gt;            &lt;chr&gt;      &lt;chr&gt;               &lt;int&gt; &lt;chr&gt;            &lt;chr&gt;       
+##  1 NY               PAS        12/18/1970             20 SUBN             GMC         
+##  2 NY               COM        02/02/1971             46 DELV             FRUEH       
+##  3 NY               PAS        09/18/1971             40 SDN              MAZDA       
+##  4 NY               SRF        09/18/1971             21 SUBN             NISSA       
+##  5 TX               PAS        09/18/1971             21 NA               GMC         
+##  6 NY               SRF        09/18/1971             21 VAN              FORD        
+##  7 NY               999        10/10/1971             14 BUS              INTER       
+##  8 VA               PAS        04/05/1973             14 SDN              TOYOT       
+##  9 NY               COM        07/22/1973             46 DELV             TOYOT       
+## 10 NY               PAS        08/12/1973             21 SUBN             ACURA       
+## # ... with 9,100,268 more rows, and 8 more variables: issuing_agency &lt;chr&gt;,
+## #   violation_location &lt;chr&gt;, violation_precinct &lt;int&gt;, violation_time &lt;chr&gt;,
+## #   house_number &lt;chr&gt;, street_name &lt;chr&gt;, intersecting_street &lt;chr&gt;,
+## #   vehicle_color &lt;chr&gt;
+```
+]
+
+---
+
+## Object Sizes
+
+```shell
+cr173@gort [nyc_parking]$ ls -lah
+total 1.7G
+drwxr-xr-x 4 cr173 visitor 4.0K Nov  5 11:55 .
+drwxrwxrwx 3 root  root    4.0K Nov  5 12:47 ..
+-rwxr--r-- 1 cr173 visitor  14K Nov  5 11:53 fine_definition.csv
+drwxr-xr-x 2 cr173 visitor 4.0K Nov  5 11:53 nybb
+-rwxr--r-- 1 cr173 visitor 1.7G Nov  5 11:53 nyc_parking_2014.csv
+drwxrwxr-x 2 cr173 visitor 4.0K Nov  5 11:53 pluto_manhattan
+```
+
+
+```r
+pryr::object_size(nyc)
+## 2.83 GB
+
+pryr::object_size(nyc_fread)
+## 2.69 GB
+
+pryr::object_size(nyc_trim)
+## 998 MB
+```
+
+---
+
+## Clean data?
+
+How many different car colors are in this data set?
+
+--
+
+.pull-left[ .small[
+
+```r
+nyc %&gt;% 
+  count(vehicle_color) %&gt;% 
+  arrange(desc(n))
+
+## # A tibble: 2,891 x 2
+##    vehicle_color       n
+##    &lt;chr&gt;           &lt;int&gt;
+##  1 WHITE         1348510
+##  2 GY            1214213
+##  3 WH            1192609
+##  4 BK             941007
+##  5 BLACK          665194
+##  6 BL             442368
+##  7 GREY           417142
+##  8 SILVE          313770
+##  9 BLUE           301119
+## 10 RD             272772
+## # ... with 2,881 more rows
+```
+] ]
+
+.pull-right[ .small[
+
+```r
+nyc %&gt;% 
+  count(vehicle_color)
+
+
+## # A tibble: 2,891 x 2
+##    vehicle_color     n
+##    &lt;chr&gt;         &lt;int&gt;
+##  1 -                 5
+##  2 --                2
+##  3 ---               1
+##  4 ----              1
+##  5 -----             1
+##  6 -.                1
+##  7 ,                 1
+##  8 ,.A               1
+##  9 ,.J.,             1
+## 10 ,SILV             2
+## # ... with 2,881 more rows
+```
+] ]
+
+---
+
+## Fixing Dates 
+
+
+```r
+library(lubridate)
+class(nyc$issue_date)
+
+## [1] "character"
+
+nyc = nyc %&gt;% mutate(issue_date = mdy(issue_date, tz="America/New_York"))
+class(nyc$issue_date)
+
+## [1] "POSIXct" "POSIXt"
+
+head(nyc$issue_date)
+
+## [1] "1970-12-18 EST" "1971-02-02 EST" "1971-09-18 EDT" "1971-09-18 EDT" "1971-09-18 EDT" "1971-09-18 EDT"
+```
+
+---
+
+.small[
+
+```r
+nyc
+
+## # A tibble: 9,100,278 x 43
+##    summons_number plate_id registration_st… plate_type issue_date         
+##             &lt;dbl&gt; &lt;chr&gt;    &lt;chr&gt;            &lt;chr&gt;      &lt;dttm&gt;             
+##  1     1361929741 FCJ5493  NY               PAS        1970-12-18 00:00:00
+##  2     1366962000 63540MC  NY               COM        1971-02-02 00:00:00
+##  3     1356906515 GFM1421  NY               PAS        1971-09-18 00:00:00
+##  4     1342296217 FYM5117  NY               SRF        1971-09-18 00:00:00
+##  5     1342296199 95V6675  TX               PAS        1971-09-18 00:00:00
+##  6     1342296187 GCY4187  NY               SRF        1971-09-18 00:00:00
+##  7     1337077380 18972BB  NY               999        1971-10-10 00:00:00
+##  8     1364523796 WNJ4730  VA               PAS        1973-04-05 00:00:00
+##  9     1359914924 68091JZ  NY               COM        1973-07-22 00:00:00
+## 10     1355498326 EWV4127  NY               PAS        1973-08-12 00:00:00
+## # ... with 9,100,268 more rows, and 38 more variables: violation_code &lt;int&gt;,
+## #   vehicle_body_type &lt;chr&gt;, vehicle_make &lt;chr&gt;, issuing_agency &lt;chr&gt;,
+## #   street_code1 &lt;int&gt;, street_code2 &lt;int&gt;, street_code3 &lt;int&gt;,
+## #   vehicle_expiration_date &lt;int&gt;, violation_location &lt;chr&gt;,
+## #   violation_precinct &lt;int&gt;, issuer_precinct &lt;int&gt;, issuer_code &lt;int&gt;,
+## #   issuer_command &lt;chr&gt;, issuer_squad &lt;chr&gt;, violation_time &lt;chr&gt;,
+## #   time_first_observed &lt;chr&gt;, violation_county &lt;chr&gt;,
+## #   violation_in_front_of_or_opposite &lt;chr&gt;, house_number &lt;chr&gt;,
+## #   street_name &lt;chr&gt;, intersecting_street &lt;chr&gt;, date_first_observed &lt;int&gt;,
+## #   law_section &lt;int&gt;, sub_division &lt;chr&gt;, violation_legal_code &lt;int&gt;,
+## #   days_parking_in_effect &lt;chr&gt;, from_hours_in_effect &lt;chr&gt;,
+## #   to_hours_in_effect &lt;chr&gt;, vehicle_color &lt;chr&gt;, unregistered_vehicle &lt;int&gt;,
+## #   vehicle_year &lt;int&gt;, meter_number &lt;chr&gt;, feet_from_curb &lt;int&gt;,
+## #   violation_post_code &lt;chr&gt;, violation_description &lt;chr&gt;,
+## #   no_standing_or_stopping_violation &lt;chr&gt;, hydrant_violation &lt;chr&gt;,
+## #   double_parking_violation &lt;chr&gt;
+```
+]
+
+---
+
+## More fixing dates 
+
+.small[
+
+```r
+range(nyc$issue_date)
+
+## [1] "1970-12-18 EST" "2069-12-23 EST"
+
+nyc$issue_date %&gt;% year() %&gt;% table()
+
+##   1970    1971    1973    1974    1976    1977    1979    1981    1983    1984    1987 
+##      1       6      10       1       2       1       2       4       1       2       3 
+##   1990    1991    1996    2000    2001    2002    2003    2004    2005    2006    2007 
+##      2       1       1     319      91       7      39      77       9      11      13 
+##   2008    2009    2010    2011    2012    2013    2014    2015    2016    2017    2018 
+##      8       9     129     251     618 4379109 4716512    1522     296     309     181 
+##   2019    2020    2021    2022    2023    2024    2025    2026    2027    2028    2029 
+##    329      18      26       1      31      23      10       4       4       7       3 
+##   2030    2031    2032    2033    2040    2041    2043    2044    2045    2046    2047 
+##     45      93       3       8       1      39       9       9       2       7       6 
+##   2048    2049    2050    2051    2052    2053    2060    2061    2063    2064    2066 
+##      1       3       1      12       2       1       3      10       9       5       3 
+##   2067    2069 
+##      2       1 
+```
+]
+
+---
+
+.small[
+
+```r
+filter(nyc, issue_date &gt;= mdy("1/1/2013"), issue_date &lt;= mdy("12/31/2014"))
+
+## # A tibble: 9,095,621 x 43
+##    Summons_Number Plate_ID registration_state Plate_Type issue_date Violation_Code Vehicle_Body_Type
+##             &lt;dbl&gt;    &lt;chr&gt;              &lt;chr&gt;      &lt;chr&gt;     &lt;dttm&gt;          &lt;int&gt;             &lt;chr&gt;
+##  1     1354300671   S28CMN                 NJ        PAS 2013-01-01             20              SUBN
+##  2     1349345910   XTX057                 MI        PAS 2013-01-01             99               SDN
+##  3     1268869855  GJK5565                 NY        PAS 2013-01-01             20              SUBN
+##  4     1268869843  EPS8803                 NY        PAS 2013-01-01             20               SDN
+##  5     1365149122  FWZ5341                 NY        SRF 2013-01-01             20               SDN
+##  6     1364348044  EPE8859                 NY        PAS 2013-01-01             46              SUBN
+##  7     1364348032  ERT3706                 NY        PAS 2013-01-01             62               SDN
+##  8     1364838760  DPA3951                 NY        PAS 2013-01-01             98               SDN
+##  9     1364832835  ETS1289                 NY        PAS 2013-01-01             71               SDN
+## 10     1364805819  FGE4351                 NY        PAS 2013-01-01             71              SUBN
+## # ... with 9,095,611 more rows, and 36 more variables: Vehicle_Make &lt;chr&gt;, issuing_agency &lt;chr&gt;,
+## #   Street_Code1 &lt;int&gt;, Street_Code2 &lt;int&gt;, Street_Code3 &lt;int&gt;, Vehicle_Expiration_Date &lt;int&gt;,
+## #   violation_location &lt;chr&gt;, violation_precinct &lt;int&gt;, Issuer_Precinct &lt;int&gt;, Issuer_Code &lt;int&gt;,
+## #   Issuer_Command &lt;chr&gt;, Issuer_Squad &lt;chr&gt;, violation_time &lt;chr&gt;, Time_First_Observed &lt;chr&gt;,
+## #   Violation_County &lt;chr&gt;, Violation_In_Front_Of_Or_Opposite &lt;chr&gt;, house_number &lt;chr&gt;, street_name &lt;chr&gt;,
+## #   intersecting_street &lt;chr&gt;, Date_First_Observed &lt;int&gt;, Law_Section &lt;int&gt;, Sub_Division &lt;chr&gt;,
+## #   Violation_Legal_Code &lt;int&gt;, Days_Parking_In_Effect &lt;chr&gt;, From_Hours_In_Effect &lt;chr&gt;,
+## #   To_Hours_In_Effect &lt;chr&gt;, vehicle_color &lt;chr&gt;, `Unregistered_Vehicle?` &lt;int&gt;, Vehicle_Year &lt;int&gt;,
+## #   Meter_Number &lt;chr&gt;, Feet_From_Curb &lt;int&gt;, Violation_Post_Code &lt;chr&gt;, Violation_Description &lt;chr&gt;,
+## #   No_Standing_or_Stopping_Violation &lt;chr&gt;, Hydrant_Violation &lt;chr&gt;, Double_Parking_Violation &lt;chr&gt;
+```
+]
+
+---
+
+## Performance?
+
+
+```r
+system.time(filter(nyc, issue_date &gt;= mdy("1/1/2013"), issue_date &lt;= mdy("12/31/2014")))
+  
+##   user  system elapsed  
+##  4.831   1.566   6.427  
+
+system.time(filter(nyc, year(issue_date) %in% c(2013,2014)))
+  
+##   user  system elapsed   
+##  6.864   1.952   8.879   
+```
+
+---
+
+## Putting it all together
+
+.small[
+
+```r
+nyc = readr::read_csv("/data/nyc_parking/nyc_parking_2014.csv") %&gt;%
+  janitor::clean_names() %&gt;%
+  select(registration_state:issuing_agency, 
+       violation_location, violation_precinct, violation_time,
+       number:intersecting_street, vehicle_color) %&gt;%
+  mutate(issue_date = mdy(issue_date)) %&gt;% 
+  mutate(issue_day = day(issue_date),
+         issue_month = month(issue_date),
+         issue_year = year(issue_date),
+         issue_wday = wday(issue_date, label=TRUE)) %&gt;%
+  filter(issue_year %in% 2013:2014)
+
+nyc
+
+## # A tibble: 9,095,621 x 47
+##    summons_number plate_id registration_st… plate_type issue_date          violation_code
+##             &lt;dbl&gt; &lt;chr&gt;    &lt;chr&gt;            &lt;chr&gt;      &lt;dttm&gt;                       &lt;int&gt;
+##  1     1354300671 S28CMN   NJ               PAS        2013-01-01 00:00:00             20
+##  2     1349345910 XTX057   MI               PAS        2013-01-01 00:00:00             99
+##  3     1268869855 GJK5565  NY               PAS        2013-01-01 00:00:00             20
+##  4     1268869843 EPS8803  NY               PAS        2013-01-01 00:00:00             20
+##  5     1365149122 FWZ5341  NY               SRF        2013-01-01 00:00:00             20
+##  6     1364348044 EPE8859  NY               PAS        2013-01-01 00:00:00             46
+##  7     1364348032 ERT3706  NY               PAS        2013-01-01 00:00:00             62
+##  8     1364838760 DPA3951  NY               PAS        2013-01-01 00:00:00             98
+##  9     1364832835 ETS1289  NY               PAS        2013-01-01 00:00:00             71
+## 10     1364805819 FGE4351  NY               PAS        2013-01-01 00:00:00             71
+## # ... with 9,095,611 more rows, and 41 more variables: vehicle_body_type &lt;chr&gt;, vehicle_make &lt;chr&gt;,
+## #   issuing_agency &lt;chr&gt;, street_code1 &lt;int&gt;, street_code2 &lt;int&gt;, street_code3 &lt;int&gt;,
+## #   vehicle_expiration_date &lt;int&gt;, violation_location &lt;chr&gt;, violation_precinct &lt;int&gt;,
+## #   issuer_precinct &lt;int&gt;, issuer_code &lt;int&gt;, issuer_command &lt;chr&gt;, issuer_squad &lt;chr&gt;,
+## #   violation_time &lt;chr&gt;, time_first_observed &lt;chr&gt;, violation_county &lt;chr&gt;,
+## #   violation_in_front_of_or_opposite &lt;chr&gt;, house_number &lt;chr&gt;, street_name &lt;chr&gt;,
+## #   intersecting_street &lt;chr&gt;, date_first_observed &lt;int&gt;, law_section &lt;int&gt;, sub_division &lt;chr&gt;,
+## #   violation_legal_code &lt;int&gt;, days_parking_in_effect &lt;chr&gt;, from_hours_in_effect &lt;chr&gt;,
+## #   to_hours_in_effect &lt;chr&gt;, vehicle_color &lt;chr&gt;, unregistered_vehicle &lt;int&gt;, vehicle_year &lt;int&gt;,
+## #   meter_number &lt;chr&gt;, feet_from_curb &lt;int&gt;, violation_post_code &lt;chr&gt;,
+## #   violation_description &lt;chr&gt;, no_standing_or_stopping_violation &lt;chr&gt;, hydrant_violation &lt;chr&gt;,
+## #   double_parking_violation &lt;chr&gt;, issue_day &lt;int&gt;, issue_month &lt;dbl&gt;, issue_year &lt;dbl&gt;,
+## #   issue_wday &lt;ord&gt;
+```
+]
+
+---
+
+## Ticket Frequency 
+
+
+```r
+nyc %&gt;% 
+  group_by(issue_date) %&gt;% 
+  summarize(n=n()) %&gt;%
+  ggplot(aes(x=issue_date, y=n)) + 
+    geom_line() + 
+    xlim(mdy("7/1/2013"), mdy("6/30/2014"))
+```
+
+&lt;img src="imgs/nyc_date_freq.png" width="1200" style="display: block; margin: auto;" /&gt;
+
+
+---
+
+
+## Exercise 1
+
+Some more dplyr practice,
+
+1. Create a plot of the weekly pattern (tickets issued per day of the week) - When are you most likely to get a ticket and when are you least likely to get a ticket?
+
+2. Which precinct issued the most tickets to Toyotas?
+
+---
+class: middle
+count: false
+
+# dbplyr
+
+---
+
+## Creating a database 
+
+.small[
+
+```r
+(db = dplyr::src_sqlite("/data/nyc_parking/nyc_parking_2014_cleaned.sqlite", create = TRUE))
+
+##  src:  sqlite 3.22.0 [/data/nyc_parking/nyc_parking_2014_cleaned.sqlite]
+##  tbls:
+```
+]
+
+--
+
+.small[
+
+```r
+nyc_sql = dplyr::copy_to(db, nyc, temporary = FALSE)
+db
+
+## src:  sqlite 3.22.0 [/data/nyc_parking/nyc_parking_2014_cleaned.sqlite]
+## tbls: nyc, sqlite_stat1, sqlite_stat4
+```
+]
+
+--
+
+.small[
+```r
+pryr::object_size(db)
+## 6.54 kB
+
+pryr::object_size(nyc_sql)
+## 9.54 kB
+```
+
+```shell
+&gt; ls -lah /data/nyc_parking/*.sqlite
+
+-rw-r--r-- 1 cr173 visitor 698M Nov  5 13:57 /data/nyc_parking/nyc_parking_2014_cleaned.sqlite
+```
+]
+
+---
+
+.small[
+
+```r
+nyc_sql = dplyr::tbl(db,"nyc")
+
+class(nyc_sql)
+## [1] "tbl_dbi"  "tbl_sql"  "tbl_lazy" "tbl" 
+```
+]
+
+--
+
+.small[
+```r
+nyc_sql
+## # Source:   table&lt;nyc&gt; [?? x 18]
+## # Database: sqlite 3.22.0 [/data/nyc_parking/nyc_parking_2014_cleaned.sqlite]
+##    registration_state Plate_Type issue_date Violation_Code Vehicle_Body_Type Vehicle_Make issuing_agency
+##                 &lt;chr&gt;      &lt;chr&gt;      &lt;dbl&gt;          &lt;int&gt;             &lt;chr&gt;        &lt;chr&gt;          &lt;chr&gt;
+##  1                 NJ        PAS      15706             20              SUBN        CHRYS              P
+##  2                 MI        PAS      15706             99               SDN        TOYOT              P
+##  3                 NY        PAS      15706             20              SUBN         FORD              P
+##  4                 NY        PAS      15706             20               SDN        INFIN              P
+##  5                 NY        SRF      15706             20               SDN        NISSA              P
+##  6                 NY        PAS      15706             46              SUBN        CHRYS              P
+##  7                 NY        PAS      15706             62               SDN        HYUND              P
+##  8                 NY        PAS      15706             98               SDN        TOYOT              P
+##  9                 NY        PAS      15706             71               SDN        TOYOT              P
+## 10                 NY        PAS      15706             71              SUBN         FORD              P
+## # ... with more rows, and 11 more variables: violation_location &lt;chr&gt;, violation_precinct &lt;int&gt;,
+## #   violation_time &lt;chr&gt;, house_number &lt;chr&gt;, street_name &lt;chr&gt;, intersecting_street &lt;chr&gt;,
+## #   vehicle_color &lt;chr&gt;, issue_day &lt;int&gt;, issue_month &lt;dbl&gt;, issue_year &lt;dbl&gt;, issue_wday &lt;chr&gt;
+```
+]
+
+--
+
+.small[
+```r
+str(nyc_sql)
+## List of 2
+##  $ src:List of 2
+##   ..$ con  :Formal class 'SQLiteConnection' [package "RSQLite"] with 7 slots
+##   .. .. ..@ ptr                :&lt;externalptr&gt; 
+##   .. .. ..@ dbname             : chr "/data/nyc_parking/nyc_parking_2014_cleaned.sqlite"
+##   .. .. ..@ loadable.extensions: logi TRUE
+##   .. .. ..@ flags              : int 70
+##   .. .. ..@ vfs                : chr ""
+##   .. .. ..@ ref                :&lt;environment: 0x55788ecb6f38&gt; 
+##   .. .. ..@ bigint             : chr "integer64"
+##   ..$ disco:&lt;environment: 0x557888dd9840&gt; 
+##   ..- attr(*, "class")= chr [1:3] "src_dbi" "src_sql" "src"
+##  $ ops:List of 2
+##   ..$ x   : 'ident' chr "nyc"
+##   ..$ vars: chr [1:18] "registration_state" "plate_type" "issue_date" "violation_code" ...
+##   ..- attr(*, "class")= chr [1:3] "op_base_remote" "op_base" "op"
+##  - attr(*, "class")= chr [1:4] "tbl_dbi" "tbl_sql" "tbl_lazy" "tbl"
+```
+]
+
+---
+
+## Using dplyr with sqlite 
+
+.small[
+
+```r
+(addr = nyc_sql %&gt;%
+        select(issue_date, issuing_agency, violation_precinct, house_number, street_name) %&gt;%
+        filter(violation_precinct &gt;=1, violation_precinct &lt;= 34)
+)
+
+## # Source:   lazy query [?? x 5]
+## # Database: sqlite 3.22.0 [/data/nyc_parking/nyc_parking_2014_cleaned.sqlite]
+##    issue_date issuing_agency violation_precinct house_number street_name    
+##         &lt;dbl&gt; &lt;chr&gt;                       &lt;int&gt; &lt;chr&gt;        &lt;chr&gt;          
+##  1      15706 P                              28 102          W 123 ST       
+##  2      15706 P                              23 2121         1 AVE          
+##  3      15706 P                              23 60           E 106 ST       
+##  4      15706 P                               5 54           ELIZABETH ST   
+##  5      15706 P                              26 488-490      ST NICHOLAS AVE
+##  6      15706 P                              26 1420         AMSTERDAM AVE  
+##  7      15706 P                              25 219          E 121 ST       
+##  8      15706 P                              12 630          LEXINGTON AVE  
+##  9      15706 P                              18 413          48 TH ST       
+## 10      15706 P                              25 2123         MADISON AVE    
+## # ... with more rows
+```
+]
+
+---
+
+## SQL Query
+
+.small[
+
+```r
+class(addr)
+
+## [1] "tbl_dbi"  "tbl_sql"  "tbl_lazy" "tbl" 
+
+show_query(addr)
+
+## &lt;SQL&gt;
+## SELECT *
+## FROM (SELECT `issue_date`, `issuing_agency`, `violation_precinct`, `house_number`, `street_name`
+## FROM `nyc`)
+## WHERE ((`violation_precinct` &gt;= 1.0) AND (`violation_precinct` &lt;= 34.0))
+```
+]
+
+
+---
+
+## SQL Grouping 
+
+
+```r
+addr %&gt;% group_by(issuing_agency, violation_precinct) %&gt;% summarize(n=n())
+
+##  # Source:   lazy query [?? x 3]
+##  # Database: sqlite 3.22.0 [/data/nyc_parking/nyc_parking_2014_cleaned.sqlite]
+##  # Groups:   issuing_agency
+##     issuing_agency violation_precinct     n
+##              &lt;chr&gt;              &lt;int&gt; &lt;int&gt;
+##   1              A                  1    13
+##   2              A                  7     1
+##   3              A                 10    24
+##   4              A                 11     1
+##   5              A                 14    47
+##   6              A                 33    11
+##   7              B                 25     2
+##   8              C                  5    73
+##   9              C                 13     7
+##  10              D                  1     1
+##  # ... with more rows
+```
+
+---
+
+## SQL Query
+
+
+```r
+addr %&gt;% group_by(issuing_agency, violation_precinct) %&gt;% summarize(n=n()) %&gt;% show_query()
+
+## &lt;SQL&gt;
+## SELECT `issuing_agency`, `violation_precinct`, COUNT() AS `n`
+## FROM (SELECT `issue_date` AS `issue_date`, `issuing_agency` AS `issuing_agency`, `violation_precinct` AS `## violation_precinct`, `house_number` AS `house_number`, `street_name` AS `street_name`
+## FROM `nyc`)
+## WHERE ((`violation_precinct` &gt;= 1.0) AND (`violation_precinct` &lt;= 34.0))
+## GROUP BY `issuing_agency`, `violation_precinct`
+```
+
+---
+
+## SQL Translation 
+
+.small[
+In general, dplyr / dbplyr knows how to translate basic math, logical, and summary functions from R to SQL.
+dbplyr has a function, `translate_sql`, that lets you experiment with how R functions are translated to SQL. 
+
+
+```r
+dbplyr::translate_sql(x == 1 &amp; (y &lt; 2 | z &gt; 3))
+```
+
+```
+## &lt;SQL&gt; "x" = 1.0 AND ("y" &lt; 2.0 OR "z" &gt; 3.0)
+```
+
+```r
+dbplyr::translate_sql(x ^ 2 &lt; 10)
+```
+
+```
+## &lt;SQL&gt; POWER("x", 2.0) &lt; 10.0
+```
+
+```r
+dbplyr::translate_sql(x %% 2 == 10)
+```
+
+```
+## &lt;SQL&gt; "x" % 2.0 = 10.0
+```
+
+
+```r
+dbplyr::translate_sql(paste(x,y))
+```
+
+```
+## &lt;SQL&gt; PASTE("x", "y")
+```
+
+```r
+dbplyr::translate_sql(mean(x))
+```
+
+```
+## Warning: Missing values are always removed in SQL.
+## Use `avg(x, na.rm = TRUE)` to silence this warning
+```
+
+```
+## &lt;SQL&gt; avg("x") OVER ()
+```
+]
+
+---
+
+.small[
+
+```r
+dbplyr::translate_sql(sd(x))
+```
+
+```
+## &lt;SQL&gt; SD("x")
+```
+
+```r
+dbplyr::translate_sql(paste(x,y))
+```
+
+```
+## &lt;SQL&gt; PASTE("x", "y")
+```
+
+```r
+dbplyr::translate_sql(cumsum(x))
+```
+
+```
+## Warning: Windowed expression 'sum("x")' does not have explicit order.
+## Please use arrange() or window_order() to make determinstic.
+```
+
+```
+## &lt;SQL&gt; sum("x") OVER (ROWS UNBOUNDED PRECEDING)
+```
+
+```r
+dbplyr::translate_sql(lag(x))
+```
+
+```
+## &lt;SQL&gt; LAG("x", 1, NULL) OVER ()
+```
+
+```r
+dbplyr::translate_sql(lm(y~x))
+```
+
+```
+## Error in UseMethod("escape"): no applicable method for 'escape' applied to an object of class "formula"
+```
+]
+
+
+---
+
+## Complications
+
+.small[
+
+```r
+addr %&gt;% mutate(address = paste(house_number, street_name))
+
+## # Source:   lazy query [?? x 6]
+## # Database: sqlite 3.22.0 [/data/nyc_parking/nyc_parking_2014_cleaned.sqlite]
+##    issue_date issuing_agency violation_precinct house_number street_name     address                
+##         &lt;dbl&gt; &lt;chr&gt;                       &lt;int&gt; &lt;chr&gt;        &lt;chr&gt;           &lt;chr&gt;                  
+##  1      15706 P                              28 102          W 123 ST        102 W 123 ST           
+##  2      15706 P                              23 2121         1 AVE           2121 1 AVE             
+##  3      15706 P                              23 60           E 106 ST        60 E 106 ST            
+##  4      15706 P                               5 54           ELIZABETH ST    54 ELIZABETH ST        
+##  5      15706 P                              26 488-490      ST NICHOLAS AVE 488-490 ST NICHOLAS AVE
+##  6      15706 P                              26 1420         AMSTERDAM AVE   1420 AMSTERDAM AVE     
+##  7      15706 P                              25 219          E 121 ST        219 E 121 ST           
+##  8      15706 P                              12 630          LEXINGTON AVE   630 LEXINGTON AVE      
+##  9      15706 P                              18 413          48 TH ST        413 48 TH ST           
+## 10      15706 P                              25 2123         MADISON AVE     2123 MADISON AVE       
+## # ... with more rows
+
+addr %&gt;% mutate(address = paste(house_number, street_name)) %&gt;% show_query()
+
+## &lt;SQL&gt;
+## SELECT `issue_date`, `issuing_agency`, `violation_precinct`, `house_number`, `street_name`, 
+##        `house_number` || ' ' || ## `street_name` AS `address`
+## FROM (SELECT `issue_date`, `issuing_agency`, `violation_precinct`, `house_number`, `street_name`
+##       FROM `nyc`)
+## WHERE ((`violation_precinct` &gt;= 1.0) AND (`violation_precinct` &lt;= 34.0))
+```
+]
+
+---
+
+## (Unfair) Timings 
+
+.small[
+
+```r
+system.time(
+  nyc %&gt;%
+    select(issue_date, issuing_agency, violation_precinct, house_number, street_name) %&gt;%
+    filter(violation_precinct &gt;=1, violation_precinct &lt;= 34) %&gt;%
+    group_by(issuing_agency, violation_precinct) %&gt;%
+    summarize(n=n())
+)
+
+##   user  system elapsed 
+##  0.639   0.099   0.740 
+```
+]
+
+.small[
+
+```r
+system.time(
+  nyc_sql %&gt;%
+    select(issue_date, issuing_agency, violation_precinct, house_number, street_name) %&gt;%
+    filter(violation_precinct &gt;=1, violation_precinct &lt;= 34) %&gt;%
+    group_by(issuing_agency, violation_precinct) %&gt;%
+    summarize(n=n())
+)
+
+##   user  system elapsed 
+##  0.024   0.011   0.034 
+```
+]
+
+--
+
+`nyc_sql` was ~22x times faster than `nyc`, but the former is disk based while the latter is in memory, why this discrepancy?
+
+---
+
+## Laziness
+
+dplyr / dbplyr uses lazy evaluation as much as possible, particularly when working with non-local backends.
+
+* When building a query, we don't want the entire table, often we want just enough to check if our query is working.
+
+* Since we would prefer to run one complex query over many simple queries, laziness allows for verbs to be strung together.
+
+* Therefore, by default `dplyr`
+    
+    * won't connect and query the database until absolutely necessary (e.g. show output),
+
+    * and unless explicitly told to, will only query a handful of rows to give a sense of what the result will look like
+
+
+---
+
+.small[
+
+```r
+nyc_sql %&gt;%
+  select(issue_date, issuing_agency, violation_precinct, house_number, street_name) %&gt;%
+  filter(violation_precinct &gt;=1, violation_precinct &lt;= 34) %&gt;%
+  group_by(issuing_agency, violation_precinct) %&gt;%
+  summarize(n=n())
+
+## # Source:   lazy query [?? x 3]
+## # Database: sqlite 3.22.0 [/data/nyc_parking/nyc_parking_2014_cleaned.sqlite]
+## # Groups:   issuing_agency
+##    issuing_agency violation_precinct     n
+##             &lt;chr&gt;              &lt;int&gt; &lt;int&gt;
+##  1              A                  1    13
+##  2              A                  7     1
+##  3              A                 10    24
+##  4              A                 11     1
+##  5              A                 14    47
+##  6              A                 33    11
+##  7              B                 25     2
+##  8              C                  5    73
+##  9              C                 13     7
+## 10              D                  1     1
+## # ... with more rows
+```
+]
+
+---
+
+## Full query 
+.small[
+
+To force a full query *and* a return of the complete result it is necessart to use the `collect` function.
+
+
+```r
+system.time({
+  nyc_sql %&gt;%
+    select(issue_date, issuing_agency, violation_precinct, house_number, street_name) %&gt;%
+    filter(violation_precinct &gt;=1, violation_precinct &lt;= 34) %&gt;%
+    group_by(issuing_agency, violation_precinct) %&gt;%
+    summarize(n=n()) %&gt;%
+    collect()
+})
+
+##   user  system elapsed 
+##  5.915   0.507   6.445 
+
+## # A tibble: 199 x 3
+## # Groups:   issuing_agency [15]
+##    issuing_agency violation_precinct     n
+##             &lt;chr&gt;              &lt;int&gt; &lt;int&gt;
+##  1              A                  1    13
+##  2              A                  7     1
+##  3              A                 10    24
+##  4              A                 11     1
+##  5              A                 14    47
+##  6              A                 33    11
+##  7              B                 25     2
+##  8              C                  5    73
+##  9              C                 13     7
+## 10              D                  1     1
+## # ... with 189 more rows
+```
+
+
+`compute` and `collapse` also force a full query but have slightly different behavior and return types. 
+
+]
+
+---
+
+## Acknowledgments
+
+Above materials are derived in part from the following sources:
+
+* [dbplyr - Introduction Vignette](https://cran.r-project.org/web/packages/dbplyr/vignettes/dbplyr.html)
+* [dbplyr - SQL Translation](https://cran.r-project.org/web/packages/dbplyr/vignettes/sql-translation.html)
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();</script>
+
+<script>
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

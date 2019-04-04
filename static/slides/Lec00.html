@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Introduction</title>
+    <meta charset="utf-8">
+    <meta name="author" content="Colin Rundel" />
+    <meta name="date" content="2019-01-10" />
+    <link rel="stylesheet" href="slides.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Introduction
+### Colin Rundel
+### 2019-01-10
+
+---
+
+exclude: true
+
+
+
+---
+
+## Course website
+
+&lt;br/&gt;&lt;br/&gt;&lt;br/&gt;&lt;br/&gt;
+
+.center[
+http://www2.stat.duke.edu/~cr173/Sta323_Sp19/
+&lt;br/&gt;&lt;br/&gt;
+or
+&lt;br/&gt;&lt;br/&gt;
+Linked via Sakai
+]
+
+---
+
+## Reproducible Research / Computing
+* Unix shell
+
+* R + RStudio
+
+
+* rmarkdown + make
+
+* Git + github
+
+--
+
+&lt;br/&gt;
+
+.center[
+*Statistics course with programming*
+
+vs.
+
+*Programming course with statistics*
+]
+
+---
+
+## Structure + Policies
+
+* Homework
+    + Individual + Group based (random assignment)
+    + Roughly Biweekly (6 to 7 total)
+* Exams
+    + 2 Midterms, take home
+* Project  
+    + Group based (pick your own)
+* Late work
+    + late, but same day: -10%
+    + late, next day:  -20%
+    + 2 days or later: no credit
+
+---
+
+## Weekly Schedule
+
+* Tuesdays &amp; Thursdays, 1:25 - 2:40
+  - Lecture + in class exercises
+
+* Fridays, 1:25 - 2:40
+  - Lab / group work, occasional lecture
+  
+---
+
+## Grading
+
+&lt;br/&gt;
+
+.center[
+
+Component         |  Percentage
+:-----------------|--------------
+Homework          |  50%
+Midterm 1         |  20%
+Midterm 2         |  20%
+Final Project     |  10%
+
+]
+
+---
+
+## Groups
+
+* Group homework assignments
+    + Roughly biweekly assignments
+    + Open ended
+    + 5 - 20 hours of work
+    + Peer evaluation at the end
+
+&lt;br/&gt;
+
+* Expectations and roles
+    + Everyone is expected to contribute equal *effort*
+    + Everyone is expected to understand *all* code turned in
+    + Individual contribution evaluated by peer evaluation, commits, etc.
+
+
+
+---
+
+## Academic integrity
+
+&gt; To uphold the Duke Community Standard:
+
+&gt; - I will not lie, cheat, or steal in my academic endeavors;
+&gt; - I will conduct myself honorably in all my endeavors; and
+&gt; - I will act if the Standard is compromised.
+
+---
+
+## Collaboration policy
+
+
+- Only work that is clearly assigned as team work should be completed collaboratively (Homework). 
+
+- On take home exams you may not directly share or discuss code with anyone other than the Professor and TAs
+
+- On homeworks you may not directly share code with other team(s) in this class, however you are welcome to discuss the problems together and ask for advice
+
+
+---
+
+## Sharing / reusing code policy
+
+- I am well aware that a huge volume of code is available on the web to solve any number of problems.
+
+- Unless I explicitly tell you not to use something the course's policy is that you may make use of any online resources (e.g. Google, StackOverflow, etc.) but you must explicitly cite where you obtained any code you directly use (or use as inspiration). 
+
+- Any recycled code that is discovered and is not explicitly cited will be treated as plagiarism. 
+
+
+---
+
+## Enrollment
+
+* If you are enrolled or on the waitlist 
+    + there is nothing to do
+--
+* If you are not on the waitlist but meet the prereqs 
+    + enroll onto the waitlist
+--
+* If you are not on the waitlist but do not meet the prereqs
+    +  Email me after class and I will send you an enrollment survey
+--
+* Official auditing is not allowed (unofficial is fine given there is enough space)
+
+
+---
+
+## Before next week
+
+* Create a github account if you don't have one
+
+* Try to login in to the Department's RStudio server
+  - https://gort.stat.duke.edu:8787
+
+* Install recommended [software](https://stat.duke.edu/~cr173/Sta323_Sp18#software) locally
+    </textarea>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function() {
+  var d = document, s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})();</script>
+
+<script>
+(function() {
+  var i, text, code, codes = document.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+})();
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

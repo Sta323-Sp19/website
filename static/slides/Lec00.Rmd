@@ -1,0 +1,180 @@
+---
+title: "Introduction"
+author: "Colin Rundel"
+date: "2019-01-10"
+output:
+  xaringan::moon_reader:
+    css: "slides.css"
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+
+---
+exclude: true
+
+```{r setup, message=FALSE, warning=FALSE, include=FALSE}
+
+```
+
+---
+
+## Course website
+
+<br/><br/><br/><br/>
+
+.center[
+http://www2.stat.duke.edu/~cr173/Sta323_Sp19/
+<br/><br/>
+or
+<br/><br/>
+Linked via Sakai
+]
+
+---
+
+## Reproducible Research / Computing
+* Unix shell
+
+* R + RStudio
+
+
+* rmarkdown + make
+
+* Git + github
+
+--
+
+<br/>
+
+.center[
+*Statistics course with programming*
+
+vs.
+
+*Programming course with statistics*
+]
+
+---
+
+## Structure + Policies
+
+* Homework
+    + Individual + Group based (random assignment)
+    + Roughly Biweekly (6 to 7 total)
+* Exams
+    + 2 Midterms, take home
+* Project  
+    + Group based (pick your own)
+* Late work
+    + late, but same day: -10%
+    + late, next day:  -20%
+    + 2 days or later: no credit
+
+---
+
+## Weekly Schedule
+
+* Tuesdays & Thursdays, 1:25 - 2:40
+  - Lecture + in class exercises
+
+* Fridays, 1:25 - 2:40
+  - Lab / group work, occasional lecture
+  
+---
+
+## Grading
+
+<br/>
+
+.center[
+
+Component         |  Percentage
+:-----------------|--------------
+Homework          |  50%
+Midterm 1         |  20%
+Midterm 2         |  20%
+Final Project     |  10%
+
+]
+
+---
+
+## Groups
+
+* Group homework assignments
+    + Roughly biweekly assignments
+    + Open ended
+    + 5 - 20 hours of work
+    + Peer evaluation at the end
+
+<br/>
+
+* Expectations and roles
+    + Everyone is expected to contribute equal *effort*
+    + Everyone is expected to understand *all* code turned in
+    + Individual contribution evaluated by peer evaluation, commits, etc.
+
+
+
+---
+
+## Academic integrity
+
+> To uphold the Duke Community Standard:
+
+> - I will not lie, cheat, or steal in my academic endeavors;
+> - I will conduct myself honorably in all my endeavors; and
+> - I will act if the Standard is compromised.
+
+---
+
+## Collaboration policy
+
+
+- Only work that is clearly assigned as team work should be completed collaboratively (Homework). 
+
+- On take home exams you may not directly share or discuss code with anyone other than the Professor and TAs
+
+- On homeworks you may not directly share code with other team(s) in this class, however you are welcome to discuss the problems together and ask for advice
+
+
+---
+
+## Sharing / reusing code policy
+
+- I am well aware that a huge volume of code is available on the web to solve any number of problems.
+
+- Unless I explicitly tell you not to use something the course's policy is that you may make use of any online resources (e.g. Google, StackOverflow, etc.) but you must explicitly cite where you obtained any code you directly use (or use as inspiration). 
+
+- Any recycled code that is discovered and is not explicitly cited will be treated as plagiarism. 
+
+
+---
+
+## Enrollment
+
+* If you are enrolled or on the waitlist 
+    + there is nothing to do
+--
+* If you are not on the waitlist but meet the prereqs 
+    + enroll onto the waitlist
+--
+* If you are not on the waitlist but do not meet the prereqs
+    +  Email me after class and I will send you an enrollment survey
+--
+* Official auditing is not allowed (unofficial is fine given there is enough space)
+
+
+---
+
+## Before next week
+
+* Create a github account if you don't have one
+
+* Try to login in to the Department's RStudio server
+  - https://gort.stat.duke.edu:8787
+
+* Install recommended [software](https://stat.duke.edu/~cr173/Sta323_Sp18#software) locally
+

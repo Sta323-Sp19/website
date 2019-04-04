@@ -1,0 +1,327 @@
+---
+title: ggplot2 addons
+author: "Colin Rundel"
+date: "2019-02-19"
+output:
+  xaringan::moon_reader:
+    css: "slides.css"
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+exclude: true
+
+```{r setup, message=FALSE, warning=FALSE, include=FALSE}
+options(
+  htmltools.dir.version = FALSE, # for blogdown
+  width = 110,
+  tibble.width = 110
+)
+
+knitr::opts_chunk$set(
+  fig.align = "center",
+  out.width = "100%",
+  fig.height = 4,
+  dpi = 144
+)
+
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+library(gganimate)
+
+ggplot2::theme_set(ggplot2::theme_bw())
+
+set.seed(100)
+diamonds = dplyr::sample_n(diamonds, 5000)
+```
+
+---
+
+## ggplot objects
+
+```{r cache=TRUE}
+g = ggplot(diamonds, aes(x = carat, y = price)) + geom_point()
+class(g)
+```
+
+--
+
+.pull-left[
+```{r cache=TRUE}
+g
+```
+]
+
+.pull-right[
+```{r cache=TRUE}
+g + geom_smooth()
+```
+]
+
+---
+class: middle
+
+```{r echo=FALSE, fig.align="center", out.width="30%"}
+knitr::include_graphics("imgs/patchwork_logo.png")
+```
+
+---
+
+## Plots
+
+```{r cache=TRUE}
+p1 = ggplot(diamonds) + geom_point(aes(x = carat, y = price))
+
+p2 = ggplot(diamonds) + geom_boxplot(aes(x = cut, y = price))
+
+p3 = ggplot(diamonds) + geom_boxplot(aes(x = color, y = price))
+
+p4 = ggplot(diamonds) + geom_boxplot(aes(x = clarity, y = price))
+```
+
+---
+
+```{r cache=TRUE}
+p1 + p2 + p3 + p4
+```
+
+---
+
+```{r cache=TRUE}
+p1 + p2 + p3 + p4 + plot_layout(nrow=1)
+```
+
+---
+
+```{r cache=TRUE}
+p1 / (p2 + p3 + p4)
+```
+
+---
+
+```{r cache=TRUE}
+p1 + {
+  p2 + {
+    p3 + p4 + plot_layout(ncol = 1)
+  }
+} + plot_layout(ncol = 1)
+```
+
+---
+
+```{r cache=TRUE}
+p1 + p2 + p3 + p4 + plot_annotation(title = "Diamonds data", tag_levels = c("A","1"))
+```
+
+---
+
+```{r cache=TRUE}
+p1 + {
+  p2 + {
+    p3 + p4 + plot_layout(ncol = 1, tag_level = "new")
+  }
+} + 
+  plot_layout(ncol = 1) + 
+  plot_annotation(tag_levels = c("A","1"), tag_sep = ".")
+```
+
+---
+class: middle
+
+# ggthemes
+
+
+---
+
+## Extra themes
+
+.small[
+```{r}
+library(ggthemes)
+g = ggplot(diamonds, aes(x=carat, y=price, color=cut)) + geom_point()
+```
+
+.pull-left[
+```{r cache=TRUE}
+g
+```
+
+```{r cache=TRUE}
+g + theme_base()
+```
+]
+
+.pull-right[
+```{r cache=TRUE}
+g + theme_economist()
+```
+
+```{r cache=TRUE}
+g + theme_fivethirtyeight()
+```
+]
+]
+
+---
+
+## (more) Extra themes
+
+.small[
+.pull-left[
+```{r cache=TRUE}
+g + theme_gdocs()
+```
+
+```{r cache=TRUE}
+g + theme_stata()
+```
+]
+
+.pull-right[
+```{r cache=TRUE}
+g + theme_tufte()
+```
+
+```{r cache=TRUE}
+g + theme_wsj()
+```
+]
+]
+
+---
+
+## xkcd
+
+```{r message=FALSE, cache=FALSE}
+library(extrafont)
+font_import(pattern = "[X/x]kcd", prompt=FALSE)
+g + geom_smooth(se=FALSE) + xkcd::theme_xkcd()
+```
+
+
+---
+class: middle
+
+```{r echo=FALSE, fig.align="center", out.width="30%"}
+knitr::include_graphics("https://github.com/thomasp85/gganimate/raw/master/man/figures/logo.png")
+```
+
+---
+
+## Gapminder
+
+.small[
+```{r cache=TRUE}
+library(gapminder)
+
+ggplot(gapminder, aes(gdpPercap, lifeExp, size = pop, color = country)) +
+  geom_point(alpha = 0.7, show.legend = FALSE) +
+  scale_color_manual(values = country_colors) +
+  scale_size(range = c(2, 12)) +
+  scale_x_log10() +
+  facet_wrap(~continent) +
+  labs(x = 'GDP per capita', y = 'life expectancy')
+```
+]
+
+---
+
+.small[
+```{r cache=TRUE}
+gapminder %>%
+  filter(year > 1985) %>%
+  ggplot(aes(gdpPercap, lifeExp, size = pop, color = country)) +
+    geom_point(alpha = 0.7, show.legend = FALSE) +
+    scale_color_manual(values = country_colors) +
+    scale_size(range = c(2, 12)) +
+    scale_x_log10() +
+    facet_grid(year~continent) +
+    labs(x = 'GDP per capita', y = 'life expectancy')
+```
+]
+
+---
+
+.small[
+```{r cache=TRUE}
+gapminder %>%
+  ggplot(aes(gdpPercap, lifeExp, size = pop, color = country)) +
+    geom_point(alpha = 0.7, show.legend = FALSE) +
+    scale_color_manual(values = country_colors) +
+    scale_size(range = c(2, 12)) +
+    scale_x_log10() +
+    facet_wrap(~year) +
+    labs(x = 'GDP per capita', y = 'life expectancy')
+```
+]
+
+---
+
+.small[
+```{r cache=TRUE}
+library(gganimate)
+
+ggplot(gapminder, aes(gdpPercap, lifeExp, size = pop, colour = country)) +
+  geom_point(alpha = 0.7, show.legend = FALSE) +
+  scale_colour_manual(values = country_colors) +
+  scale_size(range = c(2, 12)) +
+  scale_x_log10() +
+  facet_wrap(~continent) +
+  labs(title = 'Year: {frame_time}', x = 'GDP per capita', y = 'life expectancy') +
+  transition_time(year) +
+  ease_aes('linear')
+```
+]
+
+---
+
+.small[
+```{r cache=TRUE}
+ggplot(gapminder, aes(gdpPercap, lifeExp, size = pop, colour = country)) +
+  geom_point(alpha = 0.7, show.legend = FALSE) +
+  scale_colour_manual(values = country_colors) +
+  scale_size(range = c(2, 12)) +
+  scale_x_log10() +
+  #facet_wrap(~continent) +
+  labs(title = 'Year: {frame_time}', x = 'GDP per capita', y = 'life expectancy') +
+  transition_time(year) +
+  ease_aes('linear')
+```
+]
+
+---
+
+## Datasaurus - [source](https://github.com/thomasp85/gganimate/wiki/The-Datasaurus-Dozen)
+
+.small[
+```{r cache=TRUE}
+ggplot(datasauRus::datasaurus_dozen, aes(x=x, y=y))+
+  geom_point()+
+  transition_states(dataset, transition_length = 3, state_length = 1) + 
+  ease_aes('cubic-in-out')
+```
+]
+
+---
+
+## Temperature time series - [source](https://github.com/thomasp85/gganimate/wiki/Temperature-time-series)
+
+.small[
+```{r cache=TRUE, fig.height=3.5}
+airq = mutate(airquality, Month = month.name[Month])
+
+ggplot(airq, aes(Day, Temp, group = Month)) + 
+  geom_line() + 
+  geom_segment(aes(xend = 31, yend = Temp), linetype = 2, colour = 'grey') + 
+  geom_point(size = 2) + 
+  geom_text(aes(x = 31.1, label = Month), hjust = 0) + 
+  coord_cartesian(clip = 'off') + 
+  labs(title = 'Temperature in New York', y = 'Temperature (°F)') + 
+  theme_minimal() + 
+  theme(plot.margin = margin(5.5, 40, 5.5, 5.5)) +
+  transition_reveal(Day)
+```
+]

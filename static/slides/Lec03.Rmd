@@ -1,0 +1,82 @@
+---
+title: "git & github"
+author: "Colin Rundel"
+date: "2018-01-19"
+output:
+  xaringan::moon_reader:
+    css: "slides.css"
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+exclude: true
+
+```{r, message=FALSE, warning=FALSE, include=FALSE}
+options(
+  htmltools.dir.version = FALSE, # for blogdown
+  width=80
+)
+
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
+```
+
+---
+class: center
+
+## Why version control?
+
+```{r echo=FALSE}
+knitr::include_graphics("imgs/phd_comics_vc.gif")
+```
+
+---
+
+## Why git?
+
+* Distributed
+    * Work online or offline
+    * Collaborate with large groups
+
+* Popular
+    * Active development
+    * Shiny new tools and ecosystems
+    * Fast
+
+* Tracks any type of file
+    * Works best with text 
+
+* Branching
+    * Smart merges
+
+---
+
+## Some initial configuration
+
+We want to let `git` know who we are so there are some simple configuration options we should set.
+
+Let's first tell `git` who we are, and what editor we want to use.
+
+```bash
+$ git config --global user.name "Colin Rundel"
+$ git config --global user.email "rundel@gmail.com"
+$ git config --global push.default simple
+$ git config --global core.editor nano
+$ git config --global credential.helper 'cache --timeout=600000'
+```
+
+*Note* - these options are specific to the machine on which they are set, you will need to do this on any other machine you want to use with git.
+
+On Windows the credential.helper should instead be,
+```bash
+git config --global credential.helper wincred
+```
+
+
+---
+class: middle center
+
+## Live Demo
+
+(screencast will be posted)

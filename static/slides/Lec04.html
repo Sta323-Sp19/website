@@ -1,0 +1,1780 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Data structures &amp; S3</title>
+    <meta charset="utf-8">
+    <meta name="author" content="Colin Rundel" />
+    <meta name="date" content="2019-01-22" />
+    <link href="libs/font-awesome/css/all.css" rel="stylesheet" />
+    <link href="libs/font-awesome/css/v4-shims.css" rel="stylesheet" />
+    <link rel="stylesheet" href="slides.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Data structures &amp; S3
+### Colin Rundel
+### 2019-01-22
+
+---
+
+exclude: true
+
+
+
+---
+class: middle
+count: false
+
+# Attributes
+
+---
+
+## Attributes
+
+Attributes are metadata that can be attached to objects in R. Some are special (e.g. `class`, `comment`, `dim`, `dimnames`, `names`, etc.) and change the way in which an object is treated by R. 
+
+Attributes are a named list that is attached to an R object, they can be accessed (get and set) individually via the `attr` and collectively via `attributes`.
+
+.midi[
+
+
+```r
+(x = c(L=1,M=2,N=3))
+```
+
+```
+## L M N 
+## 1 2 3
+```
+
+```r
+str(x)
+```
+
+```
+##  Named num [1:3] 1 2 3
+##  - attr(*, "names")= chr [1:3] "L" "M" "N"
+```
+
+```r
+attributes(x)
+```
+
+```
+## $names
+## [1] "L" "M" "N"
+```
+]
+
+---
+
+
+```r
+str(attributes(x))
+```
+
+```
+## List of 1
+##  $ names: chr [1:3] "L" "M" "N"
+```
+
+--
+
+
+```r
+attr(x,"names") = c("A","B","C")
+x
+```
+
+```
+## A B C 
+## 1 2 3
+```
+
+--
+
+
+```r
+names(x)
+```
+
+```
+## [1] "A" "B" "C"
+```
+
+```r
+names(x) = c("Z","Y","X")
+x
+```
+
+```
+## Z Y X 
+## 1 2 3
+```
+
+---
+
+## Factors
+
+Factor objects are how R represents categorical data (e.g. a variable where there are a fixed #s of possible outcomes).
+
+
+```r
+(x = factor(c("BS", "MS", "PhD", "MS")))
+```
+
+```
+## [1] BS  MS  PhD MS 
+## Levels: BS MS PhD
+```
+
+--
+
+
+```r
+str(x)
+```
+
+```
+##  Factor w/ 3 levels "BS","MS","PhD": 1 2 3 2
+```
+
+--
+
+
+```r
+typeof(x)
+```
+
+```
+## [1] "integer"
+```
+
+---
+
+## 
+
+A factor is just an integer vector with two attributes: `class = "factor"` and `levels = ` a character vector.
+
+
+```r
+attributes(x)
+```
+
+```
+## $levels
+## [1] "BS"  "MS"  "PhD"
+## 
+## $class
+## [1] "factor"
+```
+
+---
+
+## Exercise 1
+
+Construct a factor variable (without using `factor`, `as.factor`, or related functions) that contains the weather forecast for Durham over the next 5 days.
+
+&lt;br/&gt;
+
+&lt;img src="imgs/darksky_forecast.png" width="80%" style="display: block; margin: auto;" /&gt;
+
+
+* There should be 5 levels - `sun`, `partial clouds`, `clouds`, `rain`, `snow`.
+
+* Start with an *integer* vector and add the appropriate attributes.
+
+
+
+---
+class: middle
+count: false
+
+# Data Frames
+
+---
+
+## Data Frames
+
+A data frame is how R handles heterogeneous tabular data (i.e. rows and columns) and is one of the most commonly used data structure in R.
+
+At their core R represents data frames as a list of equal length vectors (usually atomic, but you can use lists as well).
+
+
+```r
+df = data.frame(x = 1:3, y = c("a", "b", "c"))
+df
+```
+
+```
+##   x y
+## 1 1 a
+## 2 2 b
+## 3 3 c
+```
+
+```r
+str(df)
+```
+
+```
+## 'data.frame':	3 obs. of  2 variables:
+##  $ x: int  1 2 3
+##  $ y: Factor w/ 3 levels "a","b","c": 1 2 3
+```
+---
+
+
+```r
+typeof(df)
+```
+
+```
+## [1] "list"
+```
+
+```r
+attributes(df)
+```
+
+```
+## $names
+## [1] "x" "y"
+## 
+## $class
+## [1] "data.frame"
+## 
+## $row.names
+## [1] 1 2 3
+```
+
+---
+
+## Roll your own data.frame
+
+
+```r
+df2 = list(x = 1:3, y = factor(c("a", "b", "c")))
+```
+
+--
+
+.pull-left[
+
+```r
+attr(df2,"class") = "data.frame"
+df2
+```
+
+```
+## [1] x y
+## &lt;0 rows&gt; (or 0-length row.names)
+```
+]
+
+--
+
+.pull-right[
+
+```r
+attr(df2,"row.names") = 1:3
+df2
+```
+
+```
+##   x y
+## 1 1 a
+## 2 2 b
+## 3 3 c
+```
+]
+
+
+```r
+str(df2)
+```
+
+```
+## 'data.frame':	3 obs. of  2 variables:
+##  $ x: int  1 2 3
+##  $ y: Factor w/ 3 levels "a","b","c": 1 2 3
+```
+
+```r
+identical(df, df2)
+```
+
+```
+## [1] TRUE
+```
+
+---
+
+## Strings (Characters) vs Factors
+
+By default character vectors will be convert into factors when they are included in a data frame. 
+
+Sometimes this is useful, usually it isn't -- either way it is important to know what type/class you are working with. This behavior can be changed using the `stringsAsFactors` argument to data.frame and related functions.
+
+
+```r
+df = data.frame(x = 1:3, y = c("a", "b", "c"), stringsAsFactors = FALSE)
+df
+```
+
+```
+##   x y
+## 1 1 a
+## 2 2 b
+## 3 3 c
+```
+
+```r
+str(df)
+```
+
+```
+## 'data.frame':	3 obs. of  2 variables:
+##  $ x: int  1 2 3
+##  $ y: chr  "a" "b" "c"
+```
+---
+
+## Some general advice ...
+
+&lt;br/&gt;
+&lt;br/&gt;
+
+&lt;img src="imgs/stringsasfactors.jpg" align="center" width="650px"/&gt;
+
+---
+
+## Length Coercion
+
+For data frames if the lengths of the component vectors are not multiples then there will be an error (previous examples this only produced a warning).
+
+
+```r
+data.frame(x = 1:3, y = c("a"))
+```
+
+```
+##   x y
+## 1 1 a
+## 2 2 a
+## 3 3 a
+```
+
+```r
+data.frame(x = 1:3, y = c("a","b"))
+```
+
+```
+## Error in data.frame(x = 1:3, y = c("a", "b")): arguments imply differing number of rows: 3, 2
+```
+
+```r
+data.frame(x = 1:3, y = character())
+```
+
+```
+## Error in data.frame(x = 1:3, y = character()): arguments imply differing number of rows: 3, 0
+```
+---
+
+## Growing data frames 
+
+We can add rows or columns to a data frame using `rbind` and `cbind` respectively.
+
+
+```r
+df = data.frame(x = 1:3, y = c("a","b","c"))
+cbind(df, z=TRUE)
+```
+
+```
+##   x y    z
+## 1 1 a TRUE
+## 2 2 b TRUE
+## 3 3 c TRUE
+```
+
+.pull-left[
+
+```r
+rbind(df, c(1,"a"))
+```
+
+```
+##   x y
+## 1 1 a
+## 2 2 b
+## 3 3 c
+## 4 1 a
+```
+]
+
+.pull-right[
+
+```r
+str( rbind(df, c(1,"a")) )
+```
+
+```
+## 'data.frame':	4 obs. of  2 variables:
+##  $ x: chr  "1" "2" "3" "1"
+##  $ y: Factor w/ 3 levels "a","b","c": 1 2 3 1
+```
+]
+
+
+
+---
+
+.pull-left[
+
+```r
+rbind(df, list(1,"a"))
+```
+
+```
+##   x y
+## 1 1 a
+## 2 2 b
+## 3 3 c
+## 4 1 a
+```
+]
+
+.pull-right[
+
+```r
+str( rbind(df, list(1,"a")) )
+```
+
+```
+## 'data.frame':	4 obs. of  2 variables:
+##  $ x: num  1 2 3 1
+##  $ y: Factor w/ 3 levels "a","b","c": 1 2 3 1
+```
+]
+
+--
+
+
+```r
+df1 = data.frame(x = 1:3, y = c("a","b","c"))
+df2 = data.frame(m = 3:1, n = c(TRUE,TRUE,FALSE))
+```
+
+
+```r
+cbind(df1, df2)
+```
+
+```
+##   x y m     n
+## 1 1 a 3  TRUE
+## 2 2 b 2  TRUE
+## 3 3 c 1 FALSE
+```
+
+```r
+rbind(df1, df2)
+```
+
+```
+## Error in match.names(clabs, names(xi)): names do not match previous names
+```
+
+---
+
+## Matrices
+
+A matrix is a 2 dimensional equivalent of an atomic vector (i.e. all entries must share the same type).
+
+
+```r
+(m = matrix(c(1,2,3,4), ncol=2, nrow=2))
+```
+
+```
+##      [,1] [,2]
+## [1,]    1    3
+## [2,]    2    4
+```
+
+```r
+attributes(m)
+```
+
+```
+## $dim
+## [1] 2 2
+```
+
+---
+
+## Column major ordering
+
+A matrix is an atomic vector with a `dim` attribute. Data is stored in column major order (fill the first column starting at row one, then the next column and so on).
+
+.pull-left[
+
+```r
+cm = matrix(c(1,2,3,4), 
+            ncol=2, nrow=2)
+
+cm
+```
+
+```
+##      [,1] [,2]
+## [1,]    1    3
+## [2,]    2    4
+```
+
+```r
+c(cm)
+```
+
+```
+## [1] 1 2 3 4
+```
+]
+
+.pull-right[
+
+```r
+rm = matrix(c(1,2,3,4), 
+            ncol=2, nrow=2, 
+            byrow=TRUE)
+rm
+```
+
+```
+##      [,1] [,2]
+## [1,]    1    2
+## [2,]    3    4
+```
+
+```r
+c(rm)
+```
+
+```
+## [1] 1 3 2 4
+```
+]
+
+---
+class: middle
+count: false
+
+# S3 Objects
+
+---
+
+## What is S3?
+
+&lt;br/&gt;
+
+&gt; S3 is R’s first and simplest OO system. It is the only OO system used in the base and stats packages, and it’s the most commonly used system in CRAN packages. S3 is informal and ad hoc, but it has a certain elegance in its minimalism: you can’t take away any part of it and still have a useful OO system.
+
+--Hadley Wickham, Advanced R
+
+.footnote[
+* S3 should not be confused with R's other object oriented systems: S4, Reference classes, and R6*.
+]
+
+---
+
+## `class`
+.pull-left[
+
+```r
+class( 1 )
+```
+
+```
+## [1] "numeric"
+```
+
+```r
+class( "A" )
+```
+
+```
+## [1] "character"
+```
+
+```r
+class( NA )
+```
+
+```
+## [1] "logical"
+```
+
+```r
+class( TRUE )
+```
+
+```
+## [1] "logical"
+```
+]
+
+.pull-right[
+
+```r
+class( matrix(1,2,2) )
+```
+
+```
+## [1] "matrix"
+```
+
+```r
+class( factor(c("A","B")) )
+```
+
+```
+## [1] "factor"
+```
+
+```r
+class( data.frame(x=1:3) )
+```
+
+```
+## [1] "data.frame"
+```
+
+```r
+class( (function(x) x^2) )
+```
+
+```
+## [1] "function"
+```
+]
+
+---
+
+
+## An example
+
+.pull-left[
+
+```r
+print( c("A","B","A","C") )
+```
+
+```
+## [1] "A" "B" "A" "C"
+```
+
+```r
+print( factor(c("A","B","A","C")) )
+```
+
+```
+## [1] A B A C
+## Levels: A B C
+```
+]
+
+.pull-right[
+
+```r
+print( data.frame(a=1:3, b=4:6) )
+```
+
+```
+##   a b
+## 1 1 4
+## 2 2 5
+## 3 3 6
+```
+]
+
+--
+
+&lt;br/&gt;
+
+
+```r
+print
+```
+
+```
+## function (x, ...) 
+## UseMethod("print")
+## &lt;bytecode: 0x7fa7735c2f18&gt;
+## &lt;environment: namespace:base&gt;
+```
+
+---
+
+## Other examples
+
+.pull-left[
+
+```r
+mean
+```
+
+```
+## function (x, ...) 
+## UseMethod("mean")
+## &lt;bytecode: 0x7fa771b6ba20&gt;
+## &lt;environment: namespace:base&gt;
+```
+
+```r
+t.test
+```
+
+```
+## function (x, ...) 
+## UseMethod("t.test")
+## &lt;bytecode: 0x7fa7718d5b88&gt;
+## &lt;environment: namespace:stats&gt;
+```
+]
+
+.pull-right[
+
+```r
+summary
+```
+
+```
+## function (object, ...) 
+## UseMethod("summary")
+## &lt;bytecode: 0x7fa7726bbd70&gt;
+## &lt;environment: namespace:base&gt;
+```
+
+```r
+plot
+```
+
+```
+## function (x, y, ...) 
+## UseMethod("plot")
+## &lt;bytecode: 0x7fa7701608d8&gt;
+## &lt;environment: namespace:graphics&gt;
+```
+]
+
+
+
+```r
+sum
+```
+
+```
+## function (..., na.rm = FALSE)  .Primitive("sum")
+```
+
+---
+
+## What's going on?
+
+S3 objects and their related functions work using a very simple dispatch mechanism - a generic function is created whose sole job is to call the `UseMethod` function which then calls a class specialized function named using the convention: `generic.class`.
+
+We can see all of the specialized versions of the generic using the `methods` function.
+
+
+```r
+methods("plot")
+```
+
+```
+##  [1] plot.acf*           plot.data.frame*    plot.decomposed.ts*
+##  [4] plot.default        plot.dendrogram*    plot.density*      
+##  [7] plot.ecdf           plot.factor*        plot.formula*      
+## [10] plot.function       plot.hclust*        plot.histogram*    
+## [13] plot.HoltWinters*   plot.isoreg*        plot.lm*           
+## [16] plot.medpolish*     plot.mlm*           plot.ppr*          
+## [19] plot.prcomp*        plot.princomp*      plot.profile.nls*  
+## [22] plot.R6*            plot.raster*        plot.spec*         
+## [25] plot.stepfun        plot.stl*           plot.table*        
+## [28] plot.ts             plot.tskernel*      plot.TukeyHSD*     
+## see '?methods' for accessing help and source code
+```
+
+---
+
+.small[
+
+```r
+methods("print")
+```
+
+```
+##   [1] print.acf*                                        
+##   [2] print.AES*                                        
+##   [3] print.anova*                                      
+##   [4] print.aov*                                        
+##   [5] print.aovlist*                                    
+##   [6] print.ar*                                         
+##   [7] print.Arima*                                      
+##   [8] print.arima0*                                     
+##   [9] print.AsIs                                        
+##  [10] print.aspell*                                     
+##  [11] print.aspell_inspect_context*                     
+##  [12] print.bibentry*                                   
+##  [13] print.Bibtex*                                     
+##  [14] print.boxx*                                       
+##  [15] print.browseVignettes*                            
+##  [16] print.by                                          
+##  [17] print.bytes*                                      
+##  [18] print.changedFiles*                               
+##  [19] print.check_code_usage_in_package*                
+##  [20] print.check_compiled_code*                        
+##  [21] print.check_demo_index*                           
+##  [22] print.check_depdef*                               
+##  [23] print.check_details*                              
+##  [24] print.check_details_changes*                      
+##  [25] print.check_doi_db*                               
+##  [26] print.check_dotInternal*                          
+##  [27] print.check_make_vars*                            
+##  [28] print.check_nonAPI_calls*                         
+##  [29] print.check_package_code_assign_to_globalenv*     
+##  [30] print.check_package_code_attach*                  
+##  [31] print.check_package_code_data_into_globalenv*     
+##  [32] print.check_package_code_startup_functions*       
+##  [33] print.check_package_code_syntax*                  
+##  [34] print.check_package_code_unload_functions*        
+##  [35] print.check_package_compact_datasets*             
+##  [36] print.check_package_CRAN_incoming*                
+##  [37] print.check_package_datasets*                     
+##  [38] print.check_package_depends*                      
+##  [39] print.check_package_description*                  
+##  [40] print.check_package_description_encoding*         
+##  [41] print.check_package_license*                      
+##  [42] print.check_packages_in_dir*                      
+##  [43] print.check_packages_used*                        
+##  [44] print.check_po_files*                             
+##  [45] print.check_pragmas*                              
+##  [46] print.check_Rd_contents*                          
+##  [47] print.check_Rd_line_widths*                       
+##  [48] print.check_Rd_metadata*                          
+##  [49] print.check_Rd_xrefs*                             
+##  [50] print.check_RegSym_calls*                         
+##  [51] print.check_so_symbols*                           
+##  [52] print.check_T_and_F*                              
+##  [53] print.check_url_db*                               
+##  [54] print.check_vignette_index*                       
+##  [55] print.checkDocFiles*                              
+##  [56] print.checkDocStyle*                              
+##  [57] print.checkFF*                                    
+##  [58] print.checkRd*                                    
+##  [59] print.checkReplaceFuns*                           
+##  [60] print.checkS3methods*                             
+##  [61] print.checkTnF*                                   
+##  [62] print.checkVignettes*                             
+##  [63] print.citation*                                   
+##  [64] print.cli_sitrep*                                 
+##  [65] print.codoc*                                      
+##  [66] print.codocClasses*                               
+##  [67] print.codocData*                                  
+##  [68] print.colonnade*                                  
+##  [69] print.colorConverter*                             
+##  [70] print.compactPDF*                                 
+##  [71] print.condition                                   
+##  [72] print.connection                                  
+##  [73] print.CRAN_package_reverse_dependencies_and_views*
+##  [74] print.crayon*                                     
+##  [75] print.data.frame                                  
+##  [76] print.Date                                        
+##  [77] print.default                                     
+##  [78] print.dendrogram*                                 
+##  [79] print.density*                                    
+##  [80] print.difftime                                    
+##  [81] print.dist*                                       
+##  [82] print.Dlist                                       
+##  [83] print.DLLInfo                                     
+##  [84] print.DLLInfoList                                 
+##  [85] print.DLLRegisteredRoutines                       
+##  [86] print.document_context*                           
+##  [87] print.document_position*                          
+##  [88] print.document_range*                             
+##  [89] print.document_selection*                         
+##  [90] print.dummy_coef*                                 
+##  [91] print.dummy_coef_list*                            
+##  [92] print.ecdf*                                       
+##  [93] print.eigen                                       
+##  [94] print.factanal*                                   
+##  [95] print.factor                                      
+##  [96] print.family*                                     
+##  [97] print.fileSnapshot*                               
+##  [98] print.findLineNumResult*                          
+##  [99] print.formula*                                    
+## [100] print.frame*                                      
+## [101] print.fseq*                                       
+## [102] print.ftable*                                     
+## [103] print.function                                    
+## [104] print.getAnywhere*                                
+## [105] print.glm*                                        
+## [106] print.hclust*                                     
+## [107] print.help_files_with_topic*                      
+## [108] print.hexmode                                     
+## [109] print.HoltWinters*                                
+## [110] print.hsearch*                                    
+## [111] print.hsearch_db*                                 
+## [112] print.htest*                                      
+## [113] print.html*                                       
+## [114] print.html_dependency*                            
+## [115] print.infl*                                       
+## [116] print.integrate*                                  
+## [117] print.isoreg*                                     
+## [118] print.kmeans*                                     
+## [119] print.knitr_kable*                                
+## [120] print.Latex*                                      
+## [121] print.LaTeX*                                      
+## [122] print.libraryIQR                                  
+## [123] print.listof                                      
+## [124] print.lm*                                         
+## [125] print.loadings*                                   
+## [126] print.loess*                                      
+## [127] print.logLik*                                     
+## [128] print.ls_str*                                     
+## [129] print.medpolish*                                  
+## [130] print.MethodsFunction*                            
+## [131] print.mtable*                                     
+## [132] print.NativeRoutineList                           
+## [133] print.news_db*                                    
+## [134] print.nls*                                        
+## [135] print.noquote                                     
+## [136] print.numeric_version                             
+## [137] print.object_size*                                
+## [138] print.octmode                                     
+## [139] print.packageDescription*                         
+## [140] print.packageInfo                                 
+## [141] print.packageIQR*                                 
+## [142] print.packageStatus*                              
+## [143] print.pairwise.htest*                             
+## [144] print.PDF_Array*                                  
+## [145] print.PDF_Dictionary*                             
+## [146] print.pdf_doc*                                    
+## [147] print.pdf_fonts*                                  
+## [148] print.PDF_Indirect_Reference*                     
+## [149] print.pdf_info*                                   
+## [150] print.PDF_Keyword*                                
+## [151] print.PDF_Name*                                   
+## [152] print.PDF_Stream*                                 
+## [153] print.PDF_String*                                 
+## [154] print.person*                                     
+## [155] print.pillar*                                     
+## [156] print.pillar_ornament*                            
+## [157] print.pillar_shaft*                               
+## [158] print.pillar_vertical*                            
+## [159] print.POSIXct                                     
+## [160] print.POSIXlt                                     
+## [161] print.power.htest*                                
+## [162] print.ppr*                                        
+## [163] print.prcomp*                                     
+## [164] print.princomp*                                   
+## [165] print.proc_time                                   
+## [166] print.promise*                                    
+## [167] print.quosure*                                    
+## [168] print.quosures*                                   
+## [169] print.R6*                                         
+## [170] print.R6ClassGenerator*                           
+## [171] print.raster*                                     
+## [172] print.Rcpp_stack_trace*                           
+## [173] print.Rd*                                         
+## [174] print.recordedplot*                               
+## [175] print.restart                                     
+## [176] print.RGBcolorConverter*                          
+## [177] print.rif_shaft*                                  
+## [178] print.rlang_box_done*                             
+## [179] print.rlang_data_pronoun*                         
+## [180] print.rlang_envs*                                 
+## [181] print.rlang_error*                                
+## [182] print.rlang_fake_data_pronoun*                    
+## [183] print.rlang_lambda_function*                      
+## [184] print.rlang_trace*                                
+## [185] print.rlang_zap*                                  
+## [186] print.rle                                         
+## [187] print.roman*                                      
+## [188] print.rule*                                       
+## [189] print.sessionInfo*                                
+## [190] print.shiny.tag*                                  
+## [191] print.shiny.tag.list*                             
+## [192] print.simple.list                                 
+## [193] print.smooth.spline*                              
+## [194] print.socket*                                     
+## [195] print.spark*                                      
+## [196] print.squeezed_colonnade*                         
+## [197] print.srcfile                                     
+## [198] print.srcref                                      
+## [199] print.stepfun*                                    
+## [200] print.stl*                                        
+## [201] print.StructTS*                                   
+## [202] print.subdir_tests*                               
+## [203] print.summarize_CRAN_check_status*                
+## [204] print.summary.aov*                                
+## [205] print.summary.aovlist*                            
+## [206] print.summary.ecdf*                               
+## [207] print.summary.glm*                                
+## [208] print.summary.lm*                                 
+## [209] print.summary.loess*                              
+## [210] print.summary.manova*                             
+## [211] print.summary.nls*                                
+## [212] print.summary.packageStatus*                      
+## [213] print.summary.ppr*                                
+## [214] print.summary.prcomp*                             
+## [215] print.summary.princomp*                           
+## [216] print.summary.table                               
+## [217] print.summary.warnings                            
+## [218] print.summaryDefault                              
+## [219] print.table                                       
+## [220] print.tables_aov*                                 
+## [221] print.tbl*                                        
+## [222] print.terms*                                      
+## [223] print.tree*                                       
+## [224] print.trunc_mat*                                  
+## [225] print.ts*                                         
+## [226] print.tskernel*                                   
+## [227] print.TukeyHSD*                                   
+## [228] print.tukeyline*                                  
+## [229] print.tukeysmooth*                                
+## [230] print.undoc*                                      
+## [231] print.vignette*                                   
+## [232] print.warnings                                    
+## [233] print.x                                           
+## [234] print.xfun_raw_string*                            
+## [235] print.xfun_strict_list*                           
+## [236] print.xgettext*                                   
+## [237] print.xngettext*                                  
+## [238] print.xtabs*                                      
+## [239] print.y                                           
+## see '?methods' for accessing help and source code
+```
+]
+
+---
+
+
+```r
+print.data.frame
+```
+
+```
+## function (x, ..., digits = NULL, quote = FALSE, right = TRUE, 
+##     row.names = TRUE, max = NULL) 
+## {
+##     n &lt;- length(row.names(x))
+##     if (length(x) == 0L) {
+##         cat(sprintf(ngettext(n, "data frame with 0 columns and %d row", 
+##             "data frame with 0 columns and %d rows"), n), "\n", 
+##             sep = "")
+##     }
+##     else if (n == 0L) {
+##         print.default(names(x), quote = FALSE)
+##         cat(gettext("&lt;0 rows&gt; (or 0-length row.names)\n"))
+##     }
+##     else {
+##         if (is.null(max)) 
+##             max &lt;- getOption("max.print", 99999L)
+##         if (!is.finite(max)) 
+##             stop("invalid 'max' / getOption(\"max.print\"): ", 
+##                 max)
+##         omit &lt;- (n0 &lt;- max%/%length(x)) &lt; n
+##         m &lt;- as.matrix(format.data.frame(if (omit) 
+##             x[seq_len(n0), , drop = FALSE]
+##         else x, digits = digits, na.encode = FALSE))
+##         if (!isTRUE(row.names)) 
+##             dimnames(m)[[1L]] &lt;- if (isFALSE(row.names)) 
+##                 rep.int("", if (omit) 
+##                   n0
+##                 else n)
+##             else row.names
+##         print(m, ..., quote = quote, right = right, max = max)
+##         if (omit) 
+##             cat(" [ reached 'max' / getOption(\"max.print\") -- omitted", 
+##                 n - n0, "rows ]\n")
+##     }
+##     invisible(x)
+## }
+## &lt;bytecode: 0x7fa7714a4008&gt;
+## &lt;environment: namespace:base&gt;
+```
+---
+
+
+```r
+print.matrix
+```
+
+```
+## Error in eval(expr, envir, enclos): object 'print.matrix' not found
+```
+
+--
+
+
+```r
+print.default
+```
+
+```
+## function (x, digits = NULL, quote = TRUE, na.print = NULL, print.gap = NULL, 
+##     right = FALSE, max = NULL, useSource = TRUE, ...) 
+## {
+##     noOpt &lt;- missing(digits) &amp;&amp; missing(quote) &amp;&amp; missing(na.print) &amp;&amp; 
+##         missing(print.gap) &amp;&amp; missing(right) &amp;&amp; missing(max) &amp;&amp; 
+##         missing(useSource) &amp;&amp; missing(...)
+##     .Internal(print.default(x, digits, quote, na.print, print.gap, 
+##         right, max, useSource, noOpt))
+## }
+## &lt;bytecode: 0x7fa772628320&gt;
+## &lt;environment: namespace:base&gt;
+```
+
+---
+
+## The other way
+
+If instead we have a class and want to know what specialized functions exist for that class, then we can again use the `methods` function - this time with the `class` argument.
+
+
+```r
+methods(class="data.frame")
+```
+
+```
+##  [1] [             [[            [[&lt;-          [&lt;-           $            
+##  [6] $&lt;-           aggregate     anyDuplicated as_tibble     as.data.frame
+## [11] as.list       as.matrix     by            cbind         coerce       
+## [16] dim           dimnames      dimnames&lt;-    droplevels    duplicated   
+## [21] edit          format        formula       glimpse       head         
+## [26] initialize    is_vector_s3  is.na         Math          merge        
+## [31] na.exclude    na.omit       Ops           plot          print        
+## [36] prompt        rbind         row.names     row.names&lt;-   rowsum       
+## [41] show          shuffle       slotsFromS3   split         split&lt;-      
+## [46] stack         str           subset        summary       Summary      
+## [51] t             tail          transform     type_sum      type.convert 
+## [56] unique        unstack       within       
+## see '?methods' for accessing help and source code
+```
+
+---
+class: small
+
+
+```r
+`[.data.frame`
+```
+
+```
+## function (x, i, j, drop = if (missing(i)) TRUE else length(cols) == 
+##     1) 
+## {
+##     mdrop &lt;- missing(drop)
+##     Narg &lt;- nargs() - !mdrop
+##     has.j &lt;- !missing(j)
+##     if (!all(names(sys.call()) %in% c("", "drop")) &amp;&amp; !isS4(x)) 
+##         warning("named arguments other than 'drop' are discouraged")
+##     if (Narg &lt; 3L) {
+##         if (!mdrop) 
+##             warning("'drop' argument will be ignored")
+##         if (missing(i)) 
+##             return(x)
+##         if (is.matrix(i)) 
+##             return(as.matrix(x)[i])
+##         nm &lt;- names(x)
+##         if (is.null(nm)) 
+##             nm &lt;- character()
+##         if (!is.character(i) &amp;&amp; anyNA(nm)) {
+##             names(nm) &lt;- names(x) &lt;- seq_along(x)
+##             y &lt;- NextMethod("[")
+##             cols &lt;- names(y)
+##             if (anyNA(cols)) 
+##                 stop("undefined columns selected")
+##             cols &lt;- names(y) &lt;- nm[cols]
+##         }
+##         else {
+##             y &lt;- NextMethod("[")
+##             cols &lt;- names(y)
+##             if (!is.null(cols) &amp;&amp; anyNA(cols)) 
+##                 stop("undefined columns selected")
+##         }
+##         if (anyDuplicated(cols)) 
+##             names(y) &lt;- make.unique(cols)
+##         attr(y, "row.names") &lt;- .row_names_info(x, 0L)
+##         attr(y, "class") &lt;- oldClass(x)
+##         return(y)
+##     }
+##     if (missing(i)) {
+##         if (drop &amp;&amp; !has.j &amp;&amp; length(x) == 1L) 
+##             return(.subset2(x, 1L))
+##         nm &lt;- names(x)
+##         if (is.null(nm)) 
+##             nm &lt;- character()
+##         if (has.j &amp;&amp; !is.character(j) &amp;&amp; anyNA(nm)) {
+##             names(nm) &lt;- names(x) &lt;- seq_along(x)
+##             y &lt;- .subset(x, j)
+##             cols &lt;- names(y)
+##             if (anyNA(cols)) 
+##                 stop("undefined columns selected")
+##             cols &lt;- names(y) &lt;- nm[cols]
+##         }
+##         else {
+##             y &lt;- if (has.j) 
+##                 .subset(x, j)
+##             else x
+##             cols &lt;- names(y)
+##             if (anyNA(cols)) 
+##                 stop("undefined columns selected")
+##         }
+##         if (drop &amp;&amp; length(y) == 1L) 
+##             return(.subset2(y, 1L))
+##         if (anyDuplicated(cols)) 
+##             names(y) &lt;- make.unique(cols)
+##         nrow &lt;- .row_names_info(x, 2L)
+##         if (drop &amp;&amp; !mdrop &amp;&amp; nrow == 1L) 
+##             return(structure(y, class = NULL, row.names = NULL))
+##         else {
+##             attr(y, "class") &lt;- oldClass(x)
+##             attr(y, "row.names") &lt;- .row_names_info(x, 0L)
+##             return(y)
+##         }
+##     }
+##     xx &lt;- x
+##     cols &lt;- names(xx)
+##     x &lt;- vector("list", length(x))
+##     x &lt;- .Internal(copyDFattr(xx, x))
+##     oldClass(x) &lt;- attr(x, "row.names") &lt;- NULL
+##     if (has.j) {
+##         nm &lt;- names(x)
+##         if (is.null(nm)) 
+##             nm &lt;- character()
+##         if (!is.character(j) &amp;&amp; anyNA(nm)) 
+##             names(nm) &lt;- names(x) &lt;- seq_along(x)
+##         x &lt;- x[j]
+##         cols &lt;- names(x)
+##         if (drop &amp;&amp; length(x) == 1L) {
+##             if (is.character(i)) {
+##                 rows &lt;- attr(xx, "row.names")
+##                 i &lt;- pmatch(i, rows, duplicates.ok = TRUE)
+##             }
+##             xj &lt;- .subset2(.subset(xx, j), 1L)
+##             return(if (length(dim(xj)) != 2L) xj[i] else xj[i, 
+##                 , drop = FALSE])
+##         }
+##         if (anyNA(cols)) 
+##             stop("undefined columns selected")
+##         if (!is.null(names(nm))) 
+##             cols &lt;- names(x) &lt;- nm[cols]
+##         nxx &lt;- structure(seq_along(xx), names = names(xx))
+##         sxx &lt;- match(nxx[j], seq_along(xx))
+##     }
+##     else sxx &lt;- seq_along(x)
+##     rows &lt;- NULL
+##     if (is.character(i)) {
+##         rows &lt;- attr(xx, "row.names")
+##         i &lt;- pmatch(i, rows, duplicates.ok = TRUE)
+##     }
+##     for (j in seq_along(x)) {
+##         xj &lt;- xx[[sxx[j]]]
+##         x[[j]] &lt;- if (length(dim(xj)) != 2L) 
+##             xj[i]
+##         else xj[i, , drop = FALSE]
+##     }
+##     if (drop) {
+##         n &lt;- length(x)
+##         if (n == 1L) 
+##             return(x[[1L]])
+##         if (n &gt; 1L) {
+##             xj &lt;- x[[1L]]
+##             nrow &lt;- if (length(dim(xj)) == 2L) 
+##                 dim(xj)[1L]
+##             else length(xj)
+##             drop &lt;- !mdrop &amp;&amp; nrow == 1L
+##         }
+##         else drop &lt;- FALSE
+##     }
+##     if (!drop) {
+##         if (is.null(rows)) 
+##             rows &lt;- attr(xx, "row.names")
+##         rows &lt;- rows[i]
+##         if ((ina &lt;- anyNA(rows)) | (dup &lt;- anyDuplicated(rows))) {
+##             if (!dup &amp;&amp; is.character(rows)) 
+##                 dup &lt;- "NA" %in% rows
+##             if (ina) 
+##                 rows[is.na(rows)] &lt;- "NA"
+##             if (dup) 
+##                 rows &lt;- make.unique(as.character(rows))
+##         }
+##         if (has.j &amp;&amp; anyDuplicated(nm &lt;- names(x))) 
+##             names(x) &lt;- make.unique(nm)
+##         if (is.null(rows)) 
+##             rows &lt;- attr(xx, "row.names")[i]
+##         attr(x, "row.names") &lt;- rows
+##         oldClass(x) &lt;- oldClass(xx)
+##     }
+##     x
+## }
+## &lt;bytecode: 0x7fa771cc8d38&gt;
+## &lt;environment: namespace:base&gt;
+```
+
+---
+
+## Adding methods
+
+
+
+.pull-left[
+
+```r
+x = structure(c(1,2,3), class="x")
+
+x
+```
+
+```
+## [1] 1 2 3
+## attr(,"class")
+## [1] "x"
+```
+]
+
+.pull-right[
+
+```r
+y = structure(c(1,2,3), class="y")
+
+y
+```
+
+```
+## [1] 1 2 3
+## attr(,"class")
+## [1] "y"
+```
+]
+
+--
+
+&lt;div&gt;
+.pull-left[
+
+```r
+print.x = function(x) 
+  print("Class x!")
+
+x
+```
+
+```
+## [1] "Class x!"
+```
+]
+
+.pull-right[
+
+```r
+print.y = function(y) 
+  print("Class y!")
+
+y
+```
+
+```
+## [1] "Class y!"
+```
+]
+&lt;/div&gt;
+
+--
+
+&lt;div&gt;
+.pull-left[
+
+```r
+class(x) = "y"
+x
+```
+
+```
+## [1] "Class y!"
+```
+]
+
+.pull-right[
+
+```r
+class(y) = "x"
+y
+```
+
+```
+## [1] "Class x!"
+```
+]
+&lt;/div&gt;
+
+---
+
+## Defining a new S3 Generic
+
+
+```r
+shuffle = function(x, ...) {
+  UseMethod("shuffle")
+}
+
+shuffle.default = function(x) {
+  n = length(x)
+  x[sample(seq_len(n),n)]
+}
+
+shuffle.data.frame = function(df) {
+  n = nrow(df)
+  df[sample(seq_len(n),n),]
+}
+```
+
+--
+
+.pull-left[
+
+```r
+shuffle( 1:10 )
+```
+
+```
+##  [1]  2  1  7  4  5  8 10  9  6  3
+```
+
+```r
+shuffle( letters[1:5] )
+```
+
+```
+## [1] "e" "d" "c" "b" "a"
+```
+]
+
+.pull-right[
+
+```r
+shuffle( 
+  data.frame(a=1:4, b=5:8, c=9:12)
+)
+```
+
+```
+##   a b  c
+## 1 1 5  9
+## 2 2 6 10
+## 3 3 7 11
+## 4 4 8 12
+```
+]
+
+---
+class: middle
+count: false
+
+# Tibbles
+
+---
+
+## Modern data frames
+
+Hadley Wickham has a package that modifies data frames to be more modern, or as he calls them surly and lazy.
+
+
+```r
+library(tibble)
+class(iris)
+```
+
+```
+## [1] "data.frame"
+```
+
+```r
+tbl_iris = as_tibble(iris)
+class(tbl_iris)
+```
+
+```
+## [1] "tbl_df"     "tbl"        "data.frame"
+```
+
+---
+
+## Fancy Printing
+
+
+```r
+tbl_iris
+```
+
+```
+## # A tibble: 150 x 5
+##    Sepal.Length Sepal.Width Petal.Length Petal.Width Species
+##           &lt;dbl&gt;       &lt;dbl&gt;        &lt;dbl&gt;       &lt;dbl&gt; &lt;fct&gt;  
+##  1          5.1         3.5          1.4         0.2 setosa 
+##  2          4.9         3            1.4         0.2 setosa 
+##  3          4.7         3.2          1.3         0.2 setosa 
+##  4          4.6         3.1          1.5         0.2 setosa 
+##  5          5           3.6          1.4         0.2 setosa 
+##  6          5.4         3.9          1.7         0.4 setosa 
+##  7          4.6         3.4          1.4         0.3 setosa 
+##  8          5           3.4          1.5         0.2 setosa 
+##  9          4.4         2.9          1.4         0.2 setosa 
+## 10          4.9         3.1          1.5         0.1 setosa 
+## # … with 140 more rows
+```
+
+---
+
+## Fancier printing
+
+
+```r
+data_frame(x = rnorm(10,sd=5), y = rnorm(10))
+```
+
+```
+## # A tibble: 10 x 2
+##         x       y
+##     &lt;dbl&gt;   &lt;dbl&gt;
+##  1 -7.27  -1.70  
+##  2  5.30   0.0933
+##  3 -4.64   0.419 
+##  4 -3.14   0.556 
+##  5 -0.305 -0.0337
+##  6 -2.21   0.0310
+##  7 -4.18  -0.350 
+##  8  8.82  -0.204 
+##  9  9.73  -0.961 
+## 10 -1.84  -0.888
+```
+
+---
+
+## Tibbles are lazy
+
+
+```r
+tbl_iris[1,]
+```
+
+```
+## # A tibble: 1 x 5
+##   Sepal.Length Sepal.Width Petal.Length Petal.Width Species
+##          &lt;dbl&gt;       &lt;dbl&gt;        &lt;dbl&gt;       &lt;dbl&gt; &lt;fct&gt;  
+## 1          5.1         3.5          1.4         0.2 setosa
+```
+
+.pull-left[
+
+```r
+tbl_iris[,"Species"]
+```
+
+```
+## # A tibble: 150 x 1
+##    Species
+##    &lt;fct&gt;  
+##  1 setosa 
+##  2 setosa 
+##  3 setosa 
+##  4 setosa 
+##  5 setosa 
+##  6 setosa 
+##  7 setosa 
+##  8 setosa 
+##  9 setosa 
+## 10 setosa 
+## # … with 140 more rows
+```
+]
+
+--
+
+.pull-right[
+
+```r
+data_frame(
+  x = 1:3, 
+  y = c("A","B","C")
+)
+```
+
+```
+## # A tibble: 3 x 2
+##       x y    
+##   &lt;int&gt; &lt;chr&gt;
+## 1     1 A    
+## 2     2 B    
+## 3     3 C
+```
+]
+
+---
+
+## Multiple classes
+
+
+```r
+d = data_frame(
+  x = 1:3, 
+  y = c("A","B","C")
+)
+
+class(d)
+```
+
+```
+## [1] "tbl_df"     "tbl"        "data.frame"
+```
+
+--
+
+&lt;br/&gt;
+
+
+```r
+class(d) = rev(class(d))
+class(d)
+```
+
+```
+## [1] "data.frame" "tbl"        "tbl_df"
+```
+
+```r
+d
+```
+
+```
+##   x y
+## 1 1 A
+## 2 2 B
+## 3 3 C
+```
+
+---
+
+## Reverting a tbl
+
+
+```r
+d = data_frame(
+  x = 1:3, 
+  y = c("A","B","C")
+)
+
+d
+```
+
+```
+## # A tibble: 3 x 2
+##       x y    
+##   &lt;int&gt; &lt;chr&gt;
+## 1     1 A    
+## 2     2 B    
+## 3     3 C
+```
+
+.pull-left[
+
+```r
+data.frame(d)
+```
+
+```
+##   x y
+## 1 1 A
+## 2 2 B
+## 3 3 C
+```
+]
+
+.pull-right[
+
+```r
+class(d) = "data.frame"
+d
+```
+
+```
+##   x y
+## 1 1 A
+## 2 2 B
+## 3 3 C
+```
+]
+
+
+
+---
+
+## Acknowledgments
+
+Above materials are derived in part from the following sources:
+
+* Hadley Wickham - [Advanced R](http://adv-r.had.co.nz/)
+* [R Language Definition](http://stat.ethz.ch/R-manual/R-devel/doc/manual/R-lang.html)
+    </textarea>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function() {
+  var d = document, s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})();</script>
+
+<script>
+(function() {
+  var i, text, code, codes = document.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+})();
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
